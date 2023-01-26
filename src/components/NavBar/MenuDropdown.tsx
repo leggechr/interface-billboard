@@ -151,6 +151,14 @@ export const MenuDropdown = () => {
                     <Trans>View more analytics</Trans>
                   </PrimaryMenuRow.Text>
                 </PrimaryMenuRow>
+                <PrimaryMenuRow to="/ads" close={toggleOpen}>
+                  <Icon>
+                    <GovernanceIcon width={24} height={24} />
+                  </Icon>
+                  <PrimaryMenuRow.Text>
+                    <Trans>Become an advertiser</Trans>
+                  </PrimaryMenuRow.Text>
+                </PrimaryMenuRow>
               </Column>
               <Separator />
               <Box

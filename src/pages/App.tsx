@@ -39,6 +39,7 @@ import RemoveLiquidityV3 from './RemoveLiquidity/V3'
 import Swap from './Swap'
 import { RedirectPathToSwapOnly } from './Swap/redirects'
 import Tokens from './Tokens'
+import Ads from './Ads'
 
 const TokenDetails = lazy(() => import('./TokenDetails'))
 const Vote = lazy(() => import('./Vote'))
@@ -116,6 +117,8 @@ function getCurrentPageFromLocation(locationPathname: string): InterfacePageName
       return InterfacePageName.NFT_COLLECTION_PAGE
     case locationPathname.startsWith('/nfts'):
       return InterfacePageName.NFT_EXPLORE_PAGE
+    case locationPathname.startsWith('/ads'):
+      return InterfacePageName.ADS_PAGE
     default:
       return undefined
   }
@@ -212,6 +215,8 @@ export default function App() {
                   }
                 />
                 <Route path="create-proposal" element={<Navigate to="/vote/create-proposal" replace />} />
+                
+                <Route path="ads/" element={<Ads />} />
 
                 <Route path="send" element={<RedirectPathToSwapOnly />} />
                 <Route path="swap" element={<Swap />} />
