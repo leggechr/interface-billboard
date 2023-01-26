@@ -118,7 +118,8 @@ function getCurrentPageFromLocation(locationPathname: string): InterfacePageName
     case locationPathname.startsWith('/nfts'):
       return InterfacePageName.NFT_EXPLORE_PAGE
     case locationPathname.startsWith('/ads'):
-      return InterfacePageName.ADS_PAGE
+      // We don't really need analytics for now
+      return InterfacePageName.VOTE_PAGE
     default:
       return undefined
   }
