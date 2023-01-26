@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom'
 
 import Landing from './Landing'
 import CreateBid from './CreateBid'
+import FinishBid from './FinishBid'
 
 export default function Ads() {
   return (
@@ -10,6 +11,7 @@ export default function Ads() {
         <Route path="/" element={<Landing />} />
         {/* <Route path=":governorIndex/:id" element={<VotePage />} /> */}
         <Route path="create-bid" element={<CreateBid />} />
+        <Route path="finish" element={<FinishBid />} />
       </Routes>
   )
 }

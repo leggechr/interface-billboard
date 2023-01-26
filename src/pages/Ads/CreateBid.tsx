@@ -1,29 +1,9 @@
 import { Trans } from '@lingui/macro'
-import { Trace } from '@uniswap/analytics'
-import { InterfacePageName } from '@uniswap/analytics-events'
-import { CurrencyAmount, Token } from '@uniswap/sdk-core'
-import { useWeb3React } from '@web3-react/core'
-import { AdsButtonPrimary, ButtonPrimary, ButtonSecondary } from 'components/Button'
+import { AdsButtonPrimary } from 'components/Button'
 import { AutoColumn } from 'components/Column'
-import { CardBGImage, CardNoise, CardSection, DataCard } from 'components/earn/styled'
-import FormattedCurrencyAmount from 'components/FormattedCurrencyAmount'
-import Loader from 'components/Loader'
-import { AutoRow, RowBetween, RowFixed } from 'components/Row'
-import { SwitchLocaleLink } from 'components/SwitchLocaleLink'
 import { TextInput } from 'components/TextInput'
-import Toggle from 'components/Toggle'
-import DelegateModal from 'components/vote/DelegateModal'
-import ProposalEmptyState from 'components/vote/ProposalEmptyState'
-import JSBI from 'jsbi'
-import { darken } from 'polished'
 import React, { useCallback, useContext, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Button } from 'rebass/styled-components'
-import { useModalIsOpen, useToggleDelegateModal } from 'state/application/hooks'
-import { ApplicationModal } from 'state/application/reducer'
-import { useTokenBalance } from 'state/connection/hooks'
-import { ProposalData, ProposalState } from 'state/governance/hooks'
-import { useAllProposalData, useUserDelegatee, useUserVotes } from 'state/governance/hooks'
 import styled, { useTheme } from 'styled-components/macro'
 import NoirUni from '../../assets/images/noirUni.png'
 
@@ -123,6 +103,8 @@ export default function CreateBid() {
           <AdsButtonPrimary
             // TODO: how to get icons here?
             // data-cy="join-pool-button"
+            as={Link}
+            to="/finish"
             style={{ width: '100%', borderRadius: '8px' }}
             padding="8px"
           >

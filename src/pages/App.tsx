@@ -219,6 +219,7 @@ export default function App() {
                 
                 <Route path="ads/*" element={<Ads />} />
                 <Route path="create-bid" element={<Navigate to="/ads/create-bid" replace />} />
+                <Route path="finish" element={<Navigate to="/ads/finish" replace />} />
 
                 <Route path="send" element={<RedirectPathToSwapOnly />} />
                 <Route path="swap" element={<Swap />} />
