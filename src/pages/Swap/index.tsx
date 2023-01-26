@@ -10,6 +10,7 @@ import {
 } from '@uniswap/analytics-events'
 import { Trade } from '@uniswap/router-sdk'
 import { Currency, CurrencyAmount, Percent, Token, TradeType } from '@uniswap/sdk-core'
+import { ChainId } from '@uniswap/smart-order-router'
 import { UNIVERSAL_ROUTER_ADDRESS } from '@uniswap/universal-router-sdk'
 import { useWeb3React } from '@web3-react/core'
 import { sendEvent } from 'components/analytics'
@@ -25,12 +26,13 @@ import usePermit2Allowance, { AllowanceState } from 'hooks/usePermit2Allowance'
 import { useSwapCallback } from 'hooks/useSwapCallback'
 import useTransactionDeadline from 'hooks/useTransactionDeadline'
 import JSBI from 'jsbi'
+import useCurrencyBalance from 'lib/hooks/useCurrencyBalance'
 import { formatSwapQuoteReceivedEventProperties } from 'lib/utils/analytics'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ReactNode } from 'react'
 import { ArrowDown, CheckCircle, HelpCircle, Info } from 'react-feather'
 import { useNavigate } from 'react-router-dom'
-import { Text } from 'rebass'
+import { Button, Text } from 'rebass'
 import { useToggleWalletModal } from 'state/application/hooks'
 import { InterfaceTrade } from 'state/routing/types'
 import { TradeState } from 'state/routing/types'
@@ -39,6 +41,7 @@ import invariant from 'tiny-invariant'
 import { currencyAmountToPreciseFloat, formatTransactionAmount } from 'utils/formatNumbers'
 
 import AddressInputPanel from '../../components/AddressInputPanel'
+import Ads from '../../components/Ads'
 import { ButtonConfirmed, ButtonError, ButtonLight, ButtonPrimary } from '../../components/Button'
 import { GrayCard } from '../../components/Card'
 import { AutoColumn } from '../../components/Column'
@@ -72,6 +75,59 @@ import { computeFiatValuePriceImpact } from '../../utils/computeFiatValuePriceIm
 import { maxAmountSpend } from '../../utils/maxAmountSpend'
 import { computeRealizedPriceImpact, warningSeverity } from '../../utils/prices'
 import { supportedChainId } from '../../utils/supportedChainId'
+
+const ads = [
+  {
+    image: 'https://cloudflare-ipfs.com/ipfs/QmYN3R1YY5cSVW6mNHXz86n6HAvjJoNeVGXmwrQcYqgMUU',
+    winner: '0x8a9c67fee641579deba04928c4bc45f66e26343a',
+    value: 1000,
+  },
+  {
+    image: 'https://cloudflare-ipfs.com/ipfs/QmYN3R1YY5cSVW6mNHXz86n6HAvjJoNeVGXmwrQcYqgMUU',
+    winner: '0x8a9c67fee641579deba04928c4bc45f66e26343a',
+    value: 500,
+  },
+  {
+    image: 'https://cloudflare-ipfs.com/ipfs/QmYN3R1YY5cSVW6mNHXz86n6HAvjJoNeVGXmwrQcYqgMUU',
+    winner: '0x8a9c67fee641579deba04928c4bc45f66e26343a',
+    value: 100,
+  },
+  {
+    image: 'https://cloudflare-ipfs.com/ipfs/QmYN3R1YY5cSVW6mNHXz86n6HAvjJoNeVGXmwrQcYqgMUU',
+    winner: '0x8a9c67fee641579deba04928c4bc45f66e26343a',
+    value: 20,
+  },
+  {
+    image: 'https://cloudflare-ipfs.com/ipfs/QmYN3R1YY5cSVW6mNHXz86n6HAvjJoNeVGXmwrQcYqgMUU',
+    winner: '0x8a9c67fee641579deba04928c4bc45f66e26343a',
+    value: 900,
+  },
+  {
+    image: 'https://cloudflare-ipfs.com/ipfs/QmYN3R1YY5cSVW6mNHXz86n6HAvjJoNeVGXmwrQcYqgMUU',
+    winner: '0x8a9c67fee641579deba04928c4bc45f66e26343a',
+    value: 60,
+  },
+  {
+    image: 'https://cloudflare-ipfs.com/ipfs/QmYN3R1YY5cSVW6mNHXz86n6HAvjJoNeVGXmwrQcYqgMUU',
+    winner: '0x8a9c67fee641579deba04928c4bc45f66e26343a',
+    value: 800,
+  },
+  {
+    image: 'https://cloudflare-ipfs.com/ipfs/QmYN3R1YY5cSVW6mNHXz86n6HAvjJoNeVGXmwrQcYqgMUU',
+    winner: '0x8a9c67fee641579deba04928c4bc45f66e26343a',
+    value: 180,
+  },
+  {
+    image: 'https://cloudflare-ipfs.com/ipfs/QmYN3R1YY5cSVW6mNHXz86n6HAvjJoNeVGXmwrQcYqgMUU',
+    winner: '0x8a9c67fee641579deba04928c4bc45f66e26343a',
+    value: 500,
+  },
+  {
+    image: 'https://cloudflare-ipfs.com/ipfs/QmYN3R1YY5cSVW6mNHXz86n6HAvjJoNeVGXmwrQcYqgMUU',
+    winner: '0x8a9c67fee641579deba04928c4bc45f66e26343a',
+    value: 500,
+  },
+]
 
 const ArrowContainer = styled.div`
   display: inline-block;
@@ -547,6 +603,9 @@ export default function Swap({ className }: { className?: string }) {
     !showWrap && userHasSpecifiedInputOutput && (trade || routeIsLoading || routeIsSyncing)
   )
 
+  const GLO_TOKEN = new Token(ChainId.GÖRLI, '0x5ABf80335aD99F1520d94e03a2a88545e0c007d1', 18)
+  const gloBalance = useCurrencyBalance(account ?? undefined, GLO_TOKEN)
+
   return (
     <Trace page={InterfacePageName.SWAP_PAGE} shouldLogImpression>
       <>
@@ -558,7 +617,22 @@ export default function Swap({ className }: { className?: string }) {
           onCancel={handleDismissTokenWarning}
           showCancel={true}
         />
-        <PageWrapper>
+        <PageWrapper withAds>
+          balance: {gloBalance?.toExact()}
+          unclaimed: 
+          <Button
+            id="claim-button"
+            onClick={() => alert('hi')}
+            style={{
+              position: 'absolute',
+              top: '60px',
+              right: 0,
+              opacity: 100,
+              color: 'black'
+            }}
+          >
+            claim!
+          </Button>
           <SwapWrapper className={className} id="swap-page">
             <SwapHeader allowedSlippage={allowedSlippage} />
             <ConfirmSwapModal
@@ -872,6 +946,7 @@ export default function Swap({ className }: { className?: string }) {
               </div>
             </AutoColumn>
           </SwapWrapper>
+          <Ads ads={ads} />
           <NetworkAlert />
         </PageWrapper>
         <SwitchLocaleLink />
