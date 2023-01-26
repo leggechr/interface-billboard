@@ -3,7 +3,7 @@ import { Trace } from '@uniswap/analytics'
 import { InterfacePageName } from '@uniswap/analytics-events'
 import { CurrencyAmount, Token } from '@uniswap/sdk-core'
 import { useWeb3React } from '@web3-react/core'
-import { ButtonPrimary } from 'components/Button'
+import { ButtonPrimary, ButtonSecondary } from 'components/Button'
 import { AutoColumn } from 'components/Column'
 import { CardBGImage, CardNoise, CardSection, DataCard } from 'components/earn/styled'
 import FormattedCurrencyAmount from 'components/FormattedCurrencyAmount'
@@ -43,13 +43,73 @@ const PageWrapper = styled(AutoColumn)`
   }
 `
 
+export const AdsLandingLayout = styled.div`
+  display: flex;
+  padding: 0 8px 52px;
+  justify-content: center;
+  width: 100vw;
+
+  @media screen and (min-width: ${({ theme }) => theme.breakpoint.sm}px) {
+    gap: 16px;
+    padding: 0 16px 52px;
+  }
+  @media screen and (min-width: ${({ theme }) => theme.breakpoint.md}px) {
+    gap: 40px;
+    padding: 48px 20px;
+  }
+  @media screen and (min-width: ${({ theme }) => theme.breakpoint.xl}px) {
+    gap: 60px;
+  }
+`
+
+const LeftPanel = styled.div`
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: 50%;
+  align-items: start;
+`
+
+const RightPanel = styled.div`
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: 50%;
+  background-color: #FD82FF;
+`
+
+const TextButton = styled(ThemedText.DeprecatedMain)`
+  color: ${({ theme }) => theme.accentAction};
+  :hover {
+    cursor: pointer;
+    text-decoration: underline;
+  }
+`
+
 export default function Landing() {
   const theme = useTheme()
   const { account, chainId } = useWeb3React()
   return (
     <Trace page={InterfacePageName.VOTE_PAGE} shouldLogImpression>
       <PageWrapper gap="lg" justify="center">
-        <h1>its an ad</h1>
+        <AdsLandingLayout>
+          <LeftPanel>
+            <h1>Shall we begin?</h1>
+            <ButtonSecondary
+                  as={Link}
+                  to="/create-bid"
+                  style={{ width: 'fit-content', borderRadius: '8px' }}
+                  padding="8px"
+                >
+                <Trans>Place my bid</Trans>
+            </ButtonSecondary>
+
+          </LeftPanel>
+          <RightPanel>
+            <h1>How it works</h1>
+
+          </RightPanel>
+        </AdsLandingLayout>
       </PageWrapper>
     </Trace>
   )

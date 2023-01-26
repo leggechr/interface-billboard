@@ -217,7 +217,8 @@ export default function App() {
                 />
                 <Route path="create-proposal" element={<Navigate to="/vote/create-proposal" replace />} />
                 
-                <Route path="ads/" element={<Ads />} />
+                <Route path="ads/*" element={<Ads />} />
+                <Route path="create-bid" element={<Navigate to="/ads/create-bid" replace />} />
 
                 <Route path="send" element={<RedirectPathToSwapOnly />} />
                 <Route path="swap" element={<Swap />} />
