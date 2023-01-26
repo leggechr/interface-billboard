@@ -632,6 +632,53 @@ export default function Swap({ className }: { className?: string }) {
   const rawUnclaimed = useSingleCallResult(UR, 'gloBalanceOf', [account ?? undefined])?.result?.[0]
   const unclaimed = rawUnclaimed ? CurrencyAmount.fromRawAmount(GLO_TOKEN, rawUnclaimed) : undefined
 
+  const auction = useContract('0xa7620C421d29db2bb991cD603a725b960E927cEd', [
+    {
+      inputs: [
+        {
+          internalType: 'uint256',
+          name: 'week',
+          type: 'uint256',
+        },
+      ],
+      stateMutability: 'view',
+      type: 'function',
+      name: 'getWinners',
+      outputs: [
+        {
+          internalType: 'struct Auction.AuctionWinners[10]',
+          name: 'winners_',
+          type: 'tuple[10]',
+          components: [
+            {
+              internalType: 'address',
+              name: 'winner',
+              type: 'address',
+            },
+            {
+              internalType: 'uint256',
+              name: 'value',
+              type: 'uint256',
+            },
+            {
+              internalType: 'string',
+              name: 'image',
+              type: 'string',
+            },
+          ],
+        },
+      ],
+    },
+  ])
+  const oldWinners = useSingleCallResult(auction, 'getWinners', [0])?.result?.[0]?.filter(
+    (result: any) => result.winner !== '0x0000000000000000000000000000000000000000'
+  )
+  const newWinners = useSingleCallResult(auction, 'getWinners', [1])?.result?.[0].filter(
+    (result: any) => result.winner !== '0x0000000000000000000000000000000000000000'
+  )
+  console.log(oldWinners)
+  console.log(newWinners)
+
   return (
     <Trace page={InterfacePageName.SWAP_PAGE} shouldLogImpression>
       <>
