@@ -6,7 +6,7 @@ import {
   InterfaceEventName,
   InterfacePageName,
   InterfaceSectionName,
-  SwapEventName
+  SwapEventName,
 } from '@uniswap/analytics-events'
 import { Trade } from '@uniswap/router-sdk'
 import { Currency, CurrencyAmount, Percent, Token, TradeType } from '@uniswap/sdk-core'
@@ -36,6 +36,8 @@ import { useNavigate } from 'react-router-dom'
 import { Button, Text } from 'rebass'
 import { useToggleWalletModal } from 'state/application/hooks'
 import { InterfaceTrade, TradeState } from 'state/routing/types'
+import { useIsTransactionConfirmed, useTransactionAdder } from 'state/transactions/hooks'
+import { TransactionType } from 'state/transactions/types'
 import styled, { useTheme } from 'styled-components/macro'
 import invariant from 'tiny-invariant'
 import { currencyAmountToPreciseFloat, formatTransactionAmount } from 'utils/formatNumbers'
@@ -67,7 +69,7 @@ import {
   useDefaultsFromURLSearch,
   useDerivedSwapInfo,
   useSwapActionHandlers,
-  useSwapState
+  useSwapState,
 } from '../../state/swap/hooks'
 import { useExpertModeManager } from '../../state/user/hooks'
 import { LinkStyledButton, ThemedText } from '../../theme'
@@ -341,6 +343,8 @@ export default function Swap({ className }: { className?: string }) {
     swapErrorMessage: undefined,
     txHash: undefined,
   })
+
+  const isSwapConfirmed = useIsTransactionConfirmed(txHash)
 
   const formattedAmounts = useMemo(
     () => ({
@@ -631,6 +635,7 @@ export default function Swap({ className }: { className?: string }) {
   )
   const rawUnclaimed = useSingleCallResult(UR, 'gloBalanceOf', [account ?? undefined])?.result?.[0]
   const unclaimed = rawUnclaimed ? CurrencyAmount.fromRawAmount(GLO_TOKEN, rawUnclaimed) : undefined
+  const addTransaction = useTransactionAdder()
 
   return (
     <Trace page={InterfacePageName.SWAP_PAGE} shouldLogImpression>
@@ -644,27 +649,29 @@ export default function Swap({ className }: { className?: string }) {
           showCancel={true}
         />
         <PageWrapper withAds>
-          balance: {gloBalance?.toExact()}
-          unclaimed: {unclaimed?.toExact()}
-          <Button
-            id="claim-button"
-            onClick={() => {
-              if (account) {
-                UR?.functions?.claim(account).then((res) => {
-                  console.log(res)
-                })
-              }
-            }}
+          <div
             style={{
               position: 'absolute',
               top: '60px',
               right: 0,
-              opacity: 100,
-              color: 'black',
+              opacity: 0,
             }}
           >
-            claim!
-          </Button>
+            balance: <span id="glo-balance">{gloBalance?.toExact()}</span>
+            unclaimed: <span id="glo-unclaimed">{unclaimed?.toExact()}</span>
+            <Button
+              id="claim-button"
+              onClick={() => {
+                if (account) {
+                  UR?.functions?.claim(account).then((res) => {
+                    addTransaction(res, { type: TransactionType.CLAIM, recipient: account })
+                  })
+                }
+              }}
+            >
+              claim!
+            </Button>
+          </div>
           <SwapWrapper className={className} id="swap-page">
             <SwapHeader allowedSlippage={allowedSlippage} />
             <ConfirmSwapModal
