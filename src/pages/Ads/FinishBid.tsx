@@ -27,19 +27,19 @@ const PageWrapper = styled(AutoColumn)`
 
 export const AdsLandingLayout = styled.div`
   display: flex;
-  padding: 0 8px 52px;
+  padding: 0 32px 52px;
   justify-content: center;
   width: 100vw;
   height: 800px;
 
   @media screen and (min-width: ${({ theme }) => theme.breakpoint.sm}px) {
     gap: 16px;
-    padding: 0 16px 52px;
+    padding: 0 32px 52px;
   }
-  @media screen and (min-width: ${({ theme }) => theme.breakpoint.md}px) {
-    gap: 40px;
-    padding: 48px 20px;
-  }
+  // @media screen and (min-width: ${({ theme }) => theme.breakpoint.md}px) {
+  //   gap: 40px;
+  //   padding: 48px 20px;
+  // }
   @media screen and (min-width: ${({ theme }) => theme.breakpoint.xl}px) {
     gap: 60px;
   }
@@ -58,7 +58,7 @@ const RightPanel = styled.div`
   flex: 1;
   flex-direction: column;
   width: 50%;
-  background-color: #FD82FF;
+  background-color: #E3E3E3;
   padding: 2rem;
   align-items: center;
 `
@@ -301,14 +301,13 @@ export default function FinishBid() {
             </div>
             <div>
               <AdsButtonPrimary
-                // TODO: how to get icons here?
-                // data-cy="join-pool-button"
+                
                 as={Link}
                 to="/finish"
-                style={{ width: '100%', borderRadius: '8px' }}
+                style={{ width: '100%', borderRadius: '8px', height: '60px', opacity: bid > 0 ? 1 : 0.5, pointerEvents: bid > 0 ? 'all' : 'none' }}
                 padding="8px"
               >
-                <Trans>Place top bid of 12,500 GLO Intensity</Trans>
+                <Trans>Place top bid of {bid} GLO Intensity</Trans>
               </AdsButtonPrimary>
             </div>
           </LeftPanel>
