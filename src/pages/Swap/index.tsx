@@ -6,7 +6,7 @@ import {
   InterfaceEventName,
   InterfacePageName,
   InterfaceSectionName,
-  SwapEventName,
+  SwapEventName
 } from '@uniswap/analytics-events'
 import { Trade } from '@uniswap/router-sdk'
 import { Currency, CurrencyAmount, Percent, Token, TradeType } from '@uniswap/sdk-core'
@@ -22,20 +22,20 @@ import TokenSafetyModal from 'components/TokenSafety/TokenSafetyModal'
 import { MouseoverTooltip } from 'components/Tooltip'
 import { isSupportedChain } from 'constants/chains'
 import { usePermit2Enabled } from 'featureFlags/flags/permit2'
+import { useContract } from 'hooks/useContract'
 import usePermit2Allowance, { AllowanceState } from 'hooks/usePermit2Allowance'
 import { useSwapCallback } from 'hooks/useSwapCallback'
 import useTransactionDeadline from 'hooks/useTransactionDeadline'
 import JSBI from 'jsbi'
+import { useSingleCallResult } from 'lib/hooks/multicall'
 import useCurrencyBalance from 'lib/hooks/useCurrencyBalance'
 import { formatSwapQuoteReceivedEventProperties } from 'lib/utils/analytics'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ReactNode } from 'react'
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { ArrowDown, CheckCircle, HelpCircle, Info } from 'react-feather'
 import { useNavigate } from 'react-router-dom'
 import { Button, Text } from 'rebass'
 import { useToggleWalletModal } from 'state/application/hooks'
-import { InterfaceTrade } from 'state/routing/types'
-import { TradeState } from 'state/routing/types'
+import { InterfaceTrade, TradeState } from 'state/routing/types'
 import styled, { useTheme } from 'styled-components/macro'
 import invariant from 'tiny-invariant'
 import { currencyAmountToPreciseFloat, formatTransactionAmount } from 'utils/formatNumbers'
@@ -67,7 +67,7 @@ import {
   useDefaultsFromURLSearch,
   useDerivedSwapInfo,
   useSwapActionHandlers,
-  useSwapState,
+  useSwapState
 } from '../../state/swap/hooks'
 import { useExpertModeManager } from '../../state/user/hooks'
 import { LinkStyledButton, ThemedText } from '../../theme'
@@ -605,6 +605,32 @@ export default function Swap({ className }: { className?: string }) {
 
   const GLO_TOKEN = new Token(ChainId.GÖRLI, '0x5ABf80335aD99F1520d94e03a2a88545e0c007d1', 18)
   const gloBalance = useCurrencyBalance(account ?? undefined, GLO_TOKEN)
+  const UR = useContract(
+    '0x0aC3B040018e350fd99BBE8a702B18d7d274338C',
+    [
+      {
+        constant: true,
+        inputs: [{ name: '_owner', type: 'address' }],
+        name: 'gloBalanceOf',
+        outputs: [{ name: 'balance', type: 'uint256' }],
+        payable: false,
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        constant: false,
+        inputs: [{ name: '_to', type: 'address' }],
+        name: 'claim',
+        outputs: [],
+        payable: false,
+        stateMutability: 'nonpayable',
+        type: 'function',
+      },
+    ],
+    true
+  )
+  const rawUnclaimed = useSingleCallResult(UR, 'gloBalanceOf', [account ?? undefined])?.result?.[0]
+  const unclaimed = rawUnclaimed ? CurrencyAmount.fromRawAmount(GLO_TOKEN, rawUnclaimed) : undefined
 
   return (
     <Trace page={InterfacePageName.SWAP_PAGE} shouldLogImpression>
@@ -619,16 +645,22 @@ export default function Swap({ className }: { className?: string }) {
         />
         <PageWrapper withAds>
           balance: {gloBalance?.toExact()}
-          unclaimed: 
+          unclaimed: {unclaimed?.toExact()}
           <Button
             id="claim-button"
-            onClick={() => alert('hi')}
+            onClick={() => {
+              if (account) {
+                UR?.functions?.claim(account).then((res) => {
+                  console.log(res)
+                })
+              }
+            }}
             style={{
               position: 'absolute',
               top: '60px',
               right: 0,
               opacity: 100,
-              color: 'black'
+              color: 'black',
             }}
           >
             claim!
