@@ -69,12 +69,14 @@ export const TextInput = ({
   onUserInput,
   placeholder,
   fontSize,
+  style,
 }: {
   className?: string
   value: string
   onUserInput: (value: string) => void
   placeholder: string
   fontSize: string
+  style: any
 }) => {
   const handleInput = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -95,6 +97,7 @@ export const TextInput = ({
         onChange={handleInput}
         value={value}
         fontSize={fontSize}
+        style={style}
       />
     </div>
   )

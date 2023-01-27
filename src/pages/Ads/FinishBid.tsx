@@ -1,81 +1,36 @@
-import { Trans } from '@lingui/macro'
 import { Trace } from '@uniswap/analytics'
 import { InterfacePageName } from '@uniswap/analytics-events'
 import { useWeb3React } from '@web3-react/core'
-import { AdsButtonPrimary, ButtonPrimary, ButtonSecondary } from 'components/Button'
-import { AutoColumn } from 'components/Column'
-import { Link, useLocation } from 'react-router-dom'
-import styled, { useTheme } from 'styled-components/macro'
-import { NoirUniLogo, useIPFSContext } from './CreateBid'
-import NoirUni from '../../assets/images/noirUni.png'
+import { AdsButtonPrimary } from 'components/Button'
+import Input from 'components/NumericalInput'
+import { ethers } from 'ethers'
+import { useContract } from 'hooks/useContract'
+import { useSingleCallResult } from 'lib/hooks/multicall'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
+import styled from 'styled-components/macro'
+
 import GloLogo from '../../assets/images/glo-logo.png'
 import GloLogoAnimated from '../../assets/images/GLOtoken.gif'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { TextInput } from 'components/TextInput'
-import Input from 'components/NumericalInput'
-import { NumericInput } from 'nft/components/layout/Input'
-import { useContract } from 'hooks/useContract'
-import { ethers } from 'ethers'
-import { useLocationLinkProps } from 'hooks/useLocationLinkProps'
-import { useSingleCallResult } from 'lib/hooks/multicall'
+import NoirUni from '../../assets/images/noirUni.png'
+import { NoirUniLogo } from './CreateBid'
 
-const PageWrapper = styled(AutoColumn)`
-  // padding-top: 68px;
-
-  // @media only screen and (max-width: ${({ theme }) => `${theme.breakpoint.md}px`}) {
-  //   padding: 48px 8px 0px;
-  // }
-
-  // @media only screen and (max-width: ${({ theme }) => `${theme.breakpoint.sm}px`}) {
-  //   padding-top: 20px;
-  // }
-`
-
-export const AdsLandingLayout = styled.div`
+const AdsLandingLayout = styled.div`
   display: flex;
-  padding: 0 32px 52px;
-  justify-content: center;
-  width: 100vw;
-  height: 800px;
-
-  @media screen and (min-width: ${({ theme }) => theme.breakpoint.sm}px) {
-    gap: 16px;
-    padding: 0 32px 52px;
-  }
-  // @media screen and (min-width: ${({ theme }) => theme.breakpoint.md}px) {
-  //   gap: 40px;
-  //   padding: 48px 20px;
-  // }
-  @media screen and (min-width: ${({ theme }) => theme.breakpoint.xl}px) {
-    gap: 60px;
-  }
+  flex: 1;
+  width: 100%;
 `
 
-const LeftPanel = styled.div`
+const RightPanel = styled.div<{ bgColor?: string; justifyContent?: string; gap?: string }>`
   display: flex;
   flex: 1;
   flex-direction: column;
   width: 50%;
-  place-content: space-evenly;
-`
-
-const RightPanel = styled.div`
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  width: 50%;
-  background-color: #E3E3E3;
-  padding: 2rem;
+  background-color: ${({ bgColor }) => bgColor ?? 'none'};
   align-items: center;
-`
-
-const PanelBottom = styled.div`
-  // display: flex;
-  // bottom: 0;
-`
-
-const MediumHeader = styled.p`
-  font-size: 32px;
+  padding: 0px 50px;
+  justify-content: ${({ justifyContent }) => justifyContent ?? 'flex-start'};
+  gap: ${({ gap }) => gap ?? '0px'};
 `
 
 const BidInput = styled(Input)`
@@ -85,7 +40,6 @@ const BidInput = styled(Input)`
   padding: 1rem;
   text-align: left;
   font-size: 32px;
-  color: #8C9397;
 `
 
 const BidCardElement = styled.div`
@@ -93,7 +47,7 @@ const BidCardElement = styled.div`
   height: 82px;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   border-radius: 12px;
   margin-bottom: 1rem;
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
@@ -107,14 +61,17 @@ const BidCardElementCol = styled.div`
 
 const CountdownElement = styled.div`
   display: flex;
-  flex-direction: row;
-  place-items: space-evenly;
+  align-items: center;
+  padding: 10px 0;
+  margin-bottom: 10px;
 `
 
 const ProgressUnderlay = styled.div`
   width: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+  font-size: 12px;
+  color: #787878;
 `
 
 const ProgressHeader = styled.div`
@@ -128,170 +85,180 @@ const ProgressCentered = styled.span`
 `
 
 type BidType = {
-  id: string;
-  amount: string;
-  image: string;
-  address: string;
-  intensity: number;
-  created_at: string;
+  id: string
+  amount: string
+  image: string
+  address: string
+  intensity: number
+  created_at: string
 }
 
-function BidCard({
-  bid,
-}: {
-  bid: BidType
-}) {
+function BidCard({ bid }: { bid: BidType }) {
   return (
     <BidCardElement>
-      <img 
+      <img
         style={{
           width: '100%',
           height: '100%',
           borderTopRightRadius: '0px',
           borderBottomRightRadius: '0px',
         }}
-        src={bid.image} />
+        src={bid.image}
+      />
       <BidCardElementCol>
-        <span style={{
-          fontWeight: 'bold',
-          marginBottom: '0.5rem'
-        }}>{bid.amount} GLO</span>
-        <span style={{
-          fontSize: '12px'
-        }}>Final bid</span>
-        {/* <span>{bid.amount} * {bid.intensity}</span> */}
+        <span
+          style={{
+            fontWeight: 'bold',
+            marginBottom: '0.5rem',
+          }}
+        >
+          {bid.amount} GLO
+        </span>
       </BidCardElementCol>
-      <BidCardElementCol style={{
-        textAlign: 'right'
-      }}>
+      <BidCardElementCol
+        style={{
+          textAlign: 'right',
+        }}
+      >
         <span>by {bid.address}</span>
-        <span>7h ago</span>
-        {/* <span>{bid.created_at}</span> */}
       </BidCardElementCol>
     </BidCardElement>
   )
-} 
+}
 
-const ProgressBar = ({
-  completed
-}: {
-  completed: number
-}) => {
+const ProgressBar = ({ completed }: { completed: number }) => {
+  // date from unix timestamp
+  const originalStartTime = new Date(1674772656 * 1000)
+  const endTime = new Date(1674772656 * 1000)
+  endTime.setDate(endTime.getDate() + 7)
+
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <ProgressHeader>
-        <span>start_time</span>
-        <span style={{
-          textAlign: 'right'
-        }}>end_time</span>
+        <span style={{ fontSize: '12px', color: '#787878' }}>{originalStartTime.toLocaleString()}</span>
+        <span
+          style={{
+            textAlign: 'right',
+            fontSize: '12px',
+            color: '#787878',
+          }}
+        >
+          {endTime.toLocaleString()}
+        </span>
       </ProgressHeader>
-      <div style={{
-            width: '100%',
-            height: '20px',
-            backgroundColor: '#FD82FF',
-            borderRadius: '50',
-            marginTop: '1rem',
-            marginBottom: '1rem',
-          }}>
-        <div style={{
+      <div
+        style={{
+          width: '100%',
+          height: '20px',
+          backgroundColor: '#FD82FF',
+          borderRadius: '8px',
+          margin: '6px 0',
+        }}
+      >
+        <div
+          style={{
             width: `${completed}%`,
             height: '100%',
             backgroundColor: '#787878',
-            borderRadius: 'inherit',
             textAlign: 'right',
             borderRight: '5px solid #000000',
-          }}></div>
+            borderTopLeftRadius: '8px',
+            borderBottomLeftRadius: '8px',
+          }}
+        ></div>
       </div>
       <ProgressUnderlay>
-          <span>1x</span>
-          <ProgressCentered>0.75x</ProgressCentered>
-          <ProgressCentered>0.5x</ProgressCentered>
-          <ProgressCentered>0.25x</ProgressCentered>
-          <ProgressCentered>0.1</ProgressCentered>
-          <span style={{
-            textAlign: 'right'
-          }}>0</span>
+        <span>1x</span>
+        <ProgressCentered>0.75x</ProgressCentered>
+        <ProgressCentered>0.5x</ProgressCentered>
+        <ProgressCentered>0.25x</ProgressCentered>
+        <ProgressCentered>0.1</ProgressCentered>
+        <span
+          style={{
+            textAlign: 'right',
+          }}
+        >
+          0
+        </span>
       </ProgressUnderlay>
-    </div>    
+    </div>
   )
 }
 
 const Loader = () => {
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'row'
-    }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+      }}
+    >
       <img
         style={{
-          maxWidth: "250px",
-          maxHeight: "250px",
+          maxWidth: '250px',
+          maxHeight: '250px',
         }}
-        src={GloLogoAnimated} 
-        alt={"Loading..."}
+        src={GloLogoAnimated}
+        alt="Loading..."
       />
-      {/* <p>
-        Hold tight
-      </p> */}
     </div>
   )
 }
 
 export default function FinishBid() {
-  const theme = useTheme()
   const { account, chainId } = useWeb3React()
   const location = useLocation()
-  
-  const [ bid, setBid ] = useState(0)
-  const [ intensity, setIntensity ] = useState(1)
-  const [ completed, setCompleted ] = useState(false)
-  const [ loading, setLoading ] = useState(false)
+
+  const [bid, setBid] = useState(0)
+  const [completed, setCompleted] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   let progressCounter = 100
   const calculateTimeLeft = (): {
-    d: number,
-    h: number,
-    m: number,
+    d: number
+    h: number
+    m: number
     s: number
   } => {
     // date from unix timestamp
-    let startTime = new Date(1674772656 * 1000)
+    const startTime = new Date(1674772656 * 1000)
     const originalStartTime = new Date(1674772656 * 1000)
     startTime.setDate(startTime.getDate() + 7)
     // add 1 week to start time
-    let difference = +startTime - +new Date();
-    
+    const difference = +startTime - +new Date()
+
     progressCounter = difference / (startTime.getTime() - originalStartTime.getTime())
-  
+
     if (difference > 0) {
       return {
         d: Math.floor(difference / (1000 * 60 * 60 * 24)),
         h: Math.floor((difference / (1000 * 60 * 60)) % 24),
         m: Math.floor((difference / 1000 / 60) % 60),
-        s: Math.floor((difference / 1000) % 60)
-      };
-    }
-    else {
+        s: Math.floor((difference / 1000) % 60),
+      }
+    } else {
       return {
         d: 0,
         h: 0,
         m: 0,
-        s: 0
+        s: 0,
       }
     }
   }
 
   const [timeLeft, setTimeLeft] = useState<{
-    d: number;
-    h: number;
-    m: number;
-    s: number;
-  }>(calculateTimeLeft());
+    d: number
+    h: number
+    m: number
+    s: number
+  }>(calculateTimeLeft())
 
-  const ipfsLink = location.search.split("link=")[1]
+  const ipfsLink = location.search.split('link=')[1]
 
   const handleValue = useCallback(
     (value: string) => {
@@ -302,11 +269,11 @@ export default function FinishBid() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000);
-  
-    return () => clearTimeout(timer);
-  });
+      setTimeLeft(calculateTimeLeft())
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  })
 
   const AuctionHouse = useContract(
     '0xa7620C421d29db2bb991cD603a725b960E927cEd',
@@ -314,20 +281,20 @@ export default function FinishBid() {
       {
         inputs: [
           {
-            "internalType": "uint256",
-            "name": "tokens",
-            "type": "uint256"
+            internalType: 'uint256',
+            name: 'tokens',
+            type: 'uint256',
           },
           {
-            "internalType": "string",
-            "name": "image",
-            "type": "string"
-          }
+            internalType: 'string',
+            name: 'image',
+            type: 'string',
+          },
         ],
-        "name": "insert",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
+        name: 'insert',
+        outputs: [],
+        stateMutability: 'nonpayable',
+        type: 'function',
       },
       {
         inputs: [
@@ -363,14 +330,10 @@ export default function FinishBid() {
               },
             ],
           },
-        ]
-      }
+        ],
+      },
     ],
     true
-  )
-
-  const oldWinners = useSingleCallResult(AuctionHouse, 'getWinners', [0])?.result?.[0]?.filter(
-    (result: any) => result.winner !== '0x0000000000000000000000000000000000000000'
   )
 
   const currentLeaderboard: any[] = useSingleCallResult(AuctionHouse, 'getWinners', [1])?.result?.[0].filter(
@@ -379,7 +342,7 @@ export default function FinishBid() {
 
   const initialLeaders = useMemo(() => {
     let idx = 0
-    if(!currentLeaderboard) return []
+    if (!currentLeaderboard) return []
     return currentLeaderboard.map((ret) => {
       return {
         id: String(idx++),
@@ -388,37 +351,38 @@ export default function FinishBid() {
         // show first 4 and last 4
         address: ret.winner.slice(0, 4) + '...' + ret.winner.slice(-4),
         intensity: 1,
-        created_at: '2021-10-10 10:10:10'
+        created_at: '2021-10-10 10:10:10',
       }
     })
   }, [currentLeaderboard?.length])
 
   const [leaders, setLeaders] = useState<any[]>([])
-  
+
   useEffect(() => {
     if (initialLeaders) {
       setLeaders(initialLeaders)
     }
   }, [initialLeaders])
 
+  const timeString = Object.keys(timeLeft)
+    .map((interval) => {
+      // @ts-ignore
+      if (!timeLeft[interval]) {
+        return
+      }
 
-  const timeString = Object.keys(timeLeft).map((interval) => {
-    // @ts-ignore
-    if (!timeLeft[interval]) {
-      return;
-    }
-
-    // @ts-ignore
-    return timeLeft[interval] + interval + " "
-  }).join("");
+      // @ts-ignore
+      return timeLeft[interval] + interval + ' '
+    })
+    .join('')
 
   function handleSubmit() {
-    if(!bid) {
+    if (!bid) {
       alert('Please enter a bid')
       return
     }
 
-    if(!ipfsLink) {
+    if (!ipfsLink) {
       alert('Please enter a link on previous screen')
       return
     }
@@ -440,8 +404,8 @@ export default function FinishBid() {
           // show first 4 and last 4
           address: account?.slice(0, 4) + '...' + account?.slice(-4),
           intensity: 1,
-          created_at: '2021-10-10 10:10:10'
-        }
+          created_at: '2021-10-10 10:10:10',
+        },
       ])
       res.wait().then((res: any) => {
         console.log(res)
@@ -453,91 +417,126 @@ export default function FinishBid() {
 
   return (
     <Trace page={InterfacePageName.VOTE_PAGE} shouldLogImpression>
-      <PageWrapper gap="lg" justify="center">
-        { !loading ? <AdsLandingLayout>
-          { !completed ?
-            <LeftPanel>
-              <div style={{
-                  
-              }}>
-                <NoirUniLogo src={NoirUni} />
-                <p>Set Bid Price</p>
-                <div style={{
-                  width: '100%',
-                  display: 'flex',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  borderRadius: '12px',
-                  backgroundColor: '#FFFFFF',
-                  paddingRight: '1rem'
-                }}>
-                  <BidInput
-                      onUserInput={handleValue}
-                      // TODO: cast to correct precision
-                      align={'left'}
-                      value={String(bid)}
-                      fontSize={'16'}
-                  />
-                  <img style={{
-                    width: '24px',
-                    height: '24px',
-                    marginRight: '0.5rem'
-                  }} src={GloLogo}></img>
-                  <span style={{
-                    fontSize: '32px'
-                  }}>GLO</span>
-                </div>
-                
-              </div>
-              <div>
-                <p>Auction ends in</p>
-                <CountdownElement>
-                  <span style={{
-                    fontSize: '32px',
-                    width: '50%'
-                  }}>{timeString && timeString}</span>
-                  <p style={{
-                    width: '400px'
-                  }}>The earlier you bid, the more intense your GLO. Bid now and your GLO will only be worth {(progressCounter * 100).toFixed(0)}%</p>
-                </CountdownElement>
-                <ProgressBar completed={100 - (progressCounter * 100)}/>
-              </div>
-              <div>
-                <AdsButtonPrimary
-                  style={{ width: '100%', borderRadius: '8px', height: '60px', opacity: bid > 0 ? 1 : 0.5, pointerEvents: bid > 0 ? 'all' : 'none' }}
-                  padding="8px"
-                  onClick={handleSubmit}
+      {!loading ? (
+        <AdsLandingLayout>
+          {!completed ? (
+            <RightPanel justifyContent="center" gap="24px">
+              <NoirUniLogo style={{ alignSelf: 'flex-start' }} src={NoirUni} />
+              <div style={{ width: '100%' }}>
+                Set Bid Price
+                <div
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    borderRadius: '12px',
+                    backgroundColor: '#FFFFFF',
+                    paddingRight: '1rem',
+                    border: '1px solid #E3E3E3',
+                    marginTop: '5px',
+                  }}
                 >
-                  <Trans>Place bid of {bid} <img style={{
+                  <BidInput
+                    onUserInput={handleValue}
+                    // TODO: cast to correct precision
+                    align="left"
+                    value={String(bid)}
+                    fontSize="16"
+                  />
+                  <img
+                    style={{
+                      width: '24px',
+                      height: '24px',
+                      marginRight: '0.5rem',
+                    }}
+                    src={GloLogo}
+                  ></img>
+                  <span
+                    style={{
+                      fontSize: '32px',
+                    }}
+                  >
+                    GLO
+                  </span>
+                </div>
+              </div>
+              <div style={{ width: '100%' }}>
+                Auction ends in
+                <CountdownElement>
+                  <span
+                    style={{
+                      fontSize: '32px',
+                      width: '570px',
+                      whiteSpace: 'nowrap',
+                      paddingRight: '3px',
+                    }}
+                  >
+                    {timeString && timeString}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '14px',
+                      lineHeight: '20px',
+                      color: '#6D6D6D',
+                    }}
+                  >
+                    The earlier you bid, the more intense your GLO. Bid now and your GLO will only be worth{' '}
+                    {(progressCounter * 100).toFixed(0)}%
+                  </span>
+                </CountdownElement>
+                <ProgressBar completed={100 - progressCounter * 100} />
+              </div>
+              <AdsButtonPrimary
+                style={{
+                  width: '100%',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  opacity: bid > 0 ? 1 : 0.5,
+                  pointerEvents: bid > 0 ? 'all' : 'none',
+                }}
+                padding="8px"
+                onClick={handleSubmit}
+              >
+                Place bid of {bid}{' '}
+                <img
+                  style={{
                     width: '24px',
                     height: '24px',
                     marginRight: '0.5rem',
-                    marginLeft: '0.5rem'
-                  }} src={GloLogo}></img> for {(bid * progressCounter).toFixed(2)} GLO Power</Trans>
-                </AdsButtonPrimary>
-              </div>
-            </LeftPanel>
-            :
-            <LeftPanel>
-              <p style={{
-                fontSize: '64px'
-              }}>You're all set</p>
+                    marginLeft: '0.5rem',
+                  }}
+                  src={GloLogo}
+                ></img>{' '}
+                for {(bid * progressCounter).toFixed(2)} GLO Power
+              </AdsButtonPrimary>
+            </RightPanel>
+          ) : (
+            <RightPanel>
+              <p
+                style={{
+                  fontSize: '64px',
+                }}
+              >
+                You&apos;re all set
+              </p>
               {ipfsLink && <img src={ipfsLink} alt="" />}
-            </LeftPanel>
-          }
-          <RightPanel>
-            <MediumHeader>Current Top Bids</MediumHeader>
+            </RightPanel>
+          )}
+          <RightPanel bgColor="#e3e3e3">
+            <span style={{ paddingTop: '64px', fontSize: '14px' }}>01/26 - 2/2</span>
+            <span style={{ fontSize: '28px', paddingTop: '10px', paddingBottom: '20px' }}>Bids</span>
             {
               // sort bids first by amount * intensity
               (leaders || []).sort().map((bid) => (
-                  <BidCard key={bid.id} bid={bid}/>
+                <BidCard key={bid.id} bid={bid} />
               ))
             }
           </RightPanel>
         </AdsLandingLayout>
-        : <Loader />
-      }
-      </PageWrapper>
+      ) : (
+        <Loader />
+      )}
     </Trace>
   )
 }

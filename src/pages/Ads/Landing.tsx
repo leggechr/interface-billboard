@@ -45,8 +45,8 @@ export default function Landing() {
               <AdsButtonPrimary
                 as={Link}
                 to="/create-bid"
-                style={{ width: '100%', borderRadius: '8px', height: '64px' }}
-                padding="8px"
+                style={{ width: '100%', borderRadius: '12px' }}
+                padding="16px"
               >
                 <Trans>PLACE BID</Trans>
               </AdsButtonPrimary>
@@ -67,8 +67,8 @@ export default function Landing() {
                 extension.
               </MediumHeader>
               <AdsButtonPrimary
-                style={{ width: '100%', borderRadius: '8px', height: '64px' }}
-                padding="8px"
+                style={{ width: '100%', borderRadius: '12px' }}
+                padding="16px"
                 onClick={() => {
                   alert('Ask Christine for the extension binary if you want to see it!')
                 }}
