@@ -84,11 +84,12 @@ export default function Landing() {
               <MediumHeader style={{
                 maxWidth: '90%'
               }}>
-                Every week an auction begins where ad space is sold to the highest bidder using $GLO <img style={{
+                {/* Every week an auction begins where ad space is sold to the highest bidder using $GLO */}
+                Bid $GLO <img style={{
                   width: '24px',
                   height: '24px',
                   marginRight: '0.5rem',
-                }} src={GloLogo}/>
+                }} src={GloLogo}/> every week to buy ad space on supported dapps.
               </MediumHeader>
               <AdsButtonPrimary
                     as={Link}
@@ -109,7 +110,8 @@ export default function Landing() {
               <MediumHeader style={{
                 maxWidth: '90%'
               }}>
-                $GLO from selected advertisers are distributed to users of Uniswap. Download and track rewards with our browser extension.
+                Sell $GLO back to advertisers. Download our browser extension to claim your money.
+                {/* $GLO from selected advertisers are distributed to users of Uniswap. Download and track rewards with our browser extension. */}
               </MediumHeader>
               <AdsButtonPrimary
                     as={Link}
