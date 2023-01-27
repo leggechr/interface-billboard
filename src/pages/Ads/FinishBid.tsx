@@ -9,6 +9,7 @@ import styled, { useTheme } from 'styled-components/macro'
 import { NoirUniLogo, useIPFSContext } from './CreateBid'
 import NoirUni from '../../assets/images/noirUni.png'
 import GloLogo from '../../assets/images/glo-logo.png'
+import GloLogoAnimated from '../../assets/images/GLOtoken.gif'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TextInput } from 'components/TextInput'
 import Input from 'components/NumericalInput'
@@ -220,7 +221,22 @@ const ProgressBar = ({
 
 const Loader = () => {
   return (
-    <p>loading</p>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'row'
+    }}>
+      <img
+        style={{
+          maxWidth: "250px",
+          maxHeight: "250px",
+        }}
+        src={GloLogoAnimated} 
+        alt={"Loading..."}
+      />
+      {/* <p>
+        Hold tight
+      </p> */}
+    </div>
   )
 }
 
@@ -230,7 +246,6 @@ export default function FinishBid() {
   const location = useLocation()
   
   const [ bid, setBid ] = useState(0)
-  const [ leaders, setLeaders ] = useState<BidType[]>([])
   const [ intensity, setIntensity ] = useState(1)
   const [ completed, setCompleted ] = useState(false)
   const [ loading, setLoading ] = useState(false)
@@ -359,16 +374,14 @@ export default function FinishBid() {
   )
 
 
-  let currentLeaderboard: any[] = []
-  currentLeaderboard = useSingleCallResult(AuctionHouse, 'getWinners', [1])?.result?.[0].filter(
+  const currentLeaderboard: any[] = useSingleCallResult(AuctionHouse, 'getWinners', [1])?.result?.[0].filter(
     (result: any) => result.winner !== '0x0000000000000000000000000000000000000000'
   )
 
-  useEffect(() => {
-    console.log(currentLeaderboard)
+  const initialLeaders = useMemo(() => {
     let idx = 0
-    if(!currentLeaderboard) return
-    setLeaders(currentLeaderboard.map((ret) => {
+    if(!currentLeaderboard) return []
+    return currentLeaderboard.map((ret) => {
       return {
         id: String(idx++),
         image: ret.image,
@@ -378,8 +391,10 @@ export default function FinishBid() {
         intensity: 1,
         created_at: '2021-10-10 10:10:10'
       }
-    }))
-  }, [])
+    })
+  }, [currentLeaderboard.length])
+
+  const [leaders, setLeaders] = useState(initialLeaders)
 
   const timeString = Object.keys(timeLeft).map((interval) => {
     // @ts-ignore
@@ -411,7 +426,7 @@ export default function FinishBid() {
       console.log(res)
       // add to leaders (hacky)
       setLeaders([
-        ...leaders,
+        ...initialLeaders,
         {
           id: String(leaders.length),
           image: ipfsLink,
@@ -508,7 +523,7 @@ export default function FinishBid() {
             <MediumHeader>Current Top Bids</MediumHeader>
             {
               // sort bids first by amount * intensity
-              leaders.sort().map((bid) => (
+              (leaders || []).sort().map((bid) => (
                   <BidCard key={bid.id} bid={bid}/>
               ))
             }
