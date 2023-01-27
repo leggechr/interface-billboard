@@ -8,13 +8,14 @@ import { Link, useLocation } from 'react-router-dom'
 import styled, { useTheme } from 'styled-components/macro'
 import { NoirUniLogo, useIPFSContext } from './CreateBid'
 import NoirUni from '../../assets/images/noirUni.png'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TextInput } from 'components/TextInput'
 import Input from 'components/NumericalInput'
 import { NumericInput } from 'nft/components/layout/Input'
 import { useContract } from 'hooks/useContract'
 import { ethers } from 'ethers'
 import { useLocationLinkProps } from 'hooks/useLocationLinkProps'
+import { useSingleCallResult } from 'lib/hooks/multicall'
 
 const PageWrapper = styled(AutoColumn)`
   // padding-top: 68px;
@@ -127,7 +128,8 @@ const ProgressCentered = styled.span`
 
 type BidType = {
   id: string;
-  amount: number;
+  amount: string;
+  image: string;
   address: string;
   intensity: number;
   created_at: string;
@@ -143,7 +145,7 @@ function BidCard({
       <BidCardElementCol>
         <span style={{
           fontWeight: 'bold'
-        }}>{bid.amount * bid.intensity}</span>
+        }}>{bid.amount}</span>
         <span>{bid.amount} * {bid.intensity}</span>
       </BidCardElementCol>
       <BidCardElementCol style={{
@@ -202,30 +204,6 @@ const ProgressBar = ({
   )
 }
 
-const bids = [
-  {
-    id: '1',
-    amount: 100,
-    address: '0x1234',
-    intensity: 2,
-    created_at: '2021-10-10 10:10:10'
-  },
-  {
-    id: '2',
-    amount: 500,
-    address: '0x1234',
-    intensity: 2,
-    created_at: '2021-10-10 10:10:10'
-  },
-  {
-    id: '3',
-    amount: 50,
-    address: '0x1234',
-    intensity: 5,
-    created_at: '2021-10-10 10:10:10'
-  }
-]
-
 const calculateTimeLeft = (endTime: string): {
   d: number,
   h: number,
@@ -264,6 +242,7 @@ export default function FinishBid() {
   const location = useLocation()
   
   const [ bid, setBid ] = useState(0)
+  const [ leaders, setLeaders ] = useState<BidType[]>([])
   const [ intensity, setIntensity ] = useState(1)
   const [ completed, setCompleted ] = useState(false)
   const [ loading, setLoading ] = useState(false)
@@ -311,10 +290,72 @@ export default function FinishBid() {
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
+      },
+      {
+        inputs: [
+          {
+            internalType: 'uint256',
+            name: 'week',
+            type: 'uint256',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+        name: 'getWinners',
+        outputs: [
+          {
+            internalType: 'struct Auction.AuctionWinners[10]',
+            name: 'winners_',
+            type: 'tuple[10]',
+            components: [
+              {
+                internalType: 'address',
+                name: 'winner',
+                type: 'address',
+              },
+              {
+                internalType: 'uint256',
+                name: 'value',
+                type: 'uint256',
+              },
+              {
+                internalType: 'string',
+                name: 'image',
+                type: 'string',
+              },
+            ],
+          },
+        ]
       }
     ],
     true
   )
+
+  const oldWinners = useSingleCallResult(AuctionHouse, 'getWinners', [0])?.result?.[0]?.filter(
+    (result: any) => result.winner !== '0x0000000000000000000000000000000000000000'
+  )
+
+
+  let currentLeaderboard: any[] = []
+  currentLeaderboard = useSingleCallResult(AuctionHouse, 'getWinners', [1])?.result?.[0].filter(
+    (result: any) => result.winner !== '0x0000000000000000000000000000000000000000'
+  )
+
+  useEffect(() => {
+    console.log(currentLeaderboard)
+    let idx = 0
+    setLeaders(currentLeaderboard.map((ret) => {
+      return {
+        id: String(idx++),
+        image: ret.image,
+        amount: ethers.utils.formatEther(ret.value),
+        // show first 4 and last 4
+        address: ret.winner.slice(0, 4) + '...' + ret.winner.slice(-4),
+        intensity: 1,
+        created_at: '2021-10-10 10:10:10'
+      }
+    }))
+  }, [])
 
   const timeString = Object.keys(timeLeft).map((interval) => {
     // @ts-ignore
@@ -404,7 +445,7 @@ export default function FinishBid() {
             <MediumHeader>Current Top Bids</MediumHeader>
             {
               // sort bids first by amount * intensity
-              bids.sort((a, b) => (b.amount * b.intensity) - (a.amount * a.intensity)).map((bid) => (
+              leaders.sort().map((bid) => (
                   <BidCard key={bid.id} bid={bid}/>
               ))
             }

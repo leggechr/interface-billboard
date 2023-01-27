@@ -9,7 +9,6 @@ export default function Ads() {
   return (
       <Routes>
         <Route path="/" element={<Landing />} />
-        {/* <Route path=":governorIndex/:id" element={<VotePage />} /> */}
         <Route path="create-bid" element={<CreateBid />} />
         {/* <Route path="finish" element={<FinishBid />} /> */}
       </Routes>
