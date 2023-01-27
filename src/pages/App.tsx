@@ -26,6 +26,8 @@ import DarkModeQueryParamReader from '../theme/components/DarkModeQueryParamRead
 import AddLiquidity from './AddLiquidity'
 import { RedirectDuplicateTokenIds } from './AddLiquidity/redirects'
 import { RedirectDuplicateTokenIdsV2 } from './AddLiquidityV2/redirects'
+import Ads from './Ads'
+import FinishBid from './Ads/FinishBid'
 import Landing from './Landing'
 import MigrateV2 from './MigrateV2'
 import MigrateV2Pair from './MigrateV2/MigrateV2Pair'
@@ -39,8 +41,6 @@ import RemoveLiquidityV3 from './RemoveLiquidity/V3'
 import Swap from './Swap'
 import { RedirectPathToSwapOnly } from './Swap/redirects'
 import Tokens from './Tokens'
-import Ads from './Ads'
-import FinishBid from './Ads/FinishBid'
 
 const TokenDetails = lazy(() => import('./TokenDetails'))
 const Vote = lazy(() => import('./Vote'))
@@ -60,12 +60,12 @@ initializeAnalytics(ANALYTICS_DUMMY_KEY, OriginApplication.INTERFACE, {
   isProductionEnv: isProductionEnv(),
 })
 
-const BodyWrapper = styled.div`
+const BodyWrapper = styled.div<{ noBottomPadding?: boolean }>`
   display: flex;
   flex-direction: column;
   width: 100%;
   min-height: 100vh;
-  padding: ${({ theme }) => theme.navHeight}px 0px 5rem 0px;
+  padding: ${({ theme }) => theme.navHeight}px 0px ${({ noBottomPadding }) => (noBottomPadding ? 0 : '5rem')} 0px;
   align-items: center;
   flex: 1;
 `
@@ -120,7 +120,7 @@ function getCurrentPageFromLocation(locationPathname: string): InterfacePageName
       return InterfacePageName.NFT_EXPLORE_PAGE
     case locationPathname.startsWith('/ads'):
       // We don't really need analytics for now
-      return InterfacePageName.VOTE_PAGE
+      return InterfacePageName.ADS_PAGE
     default:
       return undefined
   }
@@ -196,7 +196,7 @@ export default function App() {
         <HeaderWrapper transparent={isHeaderTransparent}>
           <NavBar />
         </HeaderWrapper>
-        <BodyWrapper>
+        <BodyWrapper noBottomPadding={currentPage === InterfacePageName.ADS_PAGE}>
           <Popups />
           <TopLevelModals />
           <Suspense fallback={<Loader />}>
@@ -217,7 +217,7 @@ export default function App() {
                   }
                 />
                 <Route path="create-proposal" element={<Navigate to="/vote/create-proposal" replace />} />
-                
+
                 <Route path="ads/finish" element={<FinishBid />} />
                 <Route path="ads/*" element={<Ads />} />
                 <Route path="create-bid" element={<Navigate to="/ads/create-bid" replace />} />
