@@ -8,6 +8,7 @@ import { Link, useLocation } from 'react-router-dom'
 import styled, { useTheme } from 'styled-components/macro'
 import { NoirUniLogo, useIPFSContext } from './CreateBid'
 import NoirUni from '../../assets/images/noirUni.png'
+import GloLogo from '../../assets/images/glo-logo.png'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TextInput } from 'components/TextInput'
 import Input from 'components/NumericalInput'
@@ -80,8 +81,6 @@ const BidInput = styled(Input)`
   width: 100%;
   height: 64px;
   max-height: 64px;
-  border-radius: 12px;
-  background-color: #FFFFFF;
   padding: 1rem;
   text-align: left;
   font-size: 32px;
@@ -437,16 +436,37 @@ export default function FinishBid() {
         { !loading ? <AdsLandingLayout>
           { !completed ?
             <LeftPanel>
-              <div>
+              <div style={{
+                  
+              }}>
                 <NoirUniLogo src={NoirUni} />
                 <p>Set Bid Price</p>
-                <BidInput 
-                    onUserInput={handleValue}
-                    // TODO: cast to correct precision
-                    align={'left'}
-                    value={String(bid)}
-                    fontSize={'16'}
-                />
+                <div style={{
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  borderRadius: '12px',
+                  backgroundColor: '#FFFFFF',
+                  paddingRight: '1rem'
+                }}>
+                  <BidInput
+                      onUserInput={handleValue}
+                      // TODO: cast to correct precision
+                      align={'left'}
+                      value={String(bid)}
+                      fontSize={'16'}
+                  />
+                  <img style={{
+                    width: '24px',
+                    height: '24px',
+                    marginRight: '0.5rem'
+                  }} src={GloLogo}></img>
+                  <span style={{
+                    fontSize: '32px'
+                  }}>GLO</span>
+                </div>
+                
               </div>
               <div>
                 <p>Auction ends in</p>
