@@ -4,14 +4,17 @@ import { InterfacePageName } from '@uniswap/analytics-events'
 import { useWeb3React } from '@web3-react/core'
 import { AdsButtonPrimary, ButtonPrimary, ButtonSecondary } from 'components/Button'
 import { AutoColumn } from 'components/Column'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import styled, { useTheme } from 'styled-components/macro'
-import { NoirUniLogo } from './CreateBid'
+import { NoirUniLogo, useIPFSContext } from './CreateBid'
 import NoirUni from '../../assets/images/noirUni.png'
 import { useCallback, useEffect, useState } from 'react'
 import { TextInput } from 'components/TextInput'
 import Input from 'components/NumericalInput'
 import { NumericInput } from 'nft/components/layout/Input'
+import { useContract } from 'hooks/useContract'
+import { ethers } from 'ethers'
+import { useLocationLinkProps } from 'hooks/useLocationLinkProps'
 
 const PageWrapper = styled(AutoColumn)`
   // padding-top: 68px;
@@ -92,6 +95,7 @@ const BidCardElement = styled.div`
   background-color: #FFFFFF;
   border-radius: 12px;
   padding: 1rem;
+  margin-bottom: 1rem;
 `
 
 const BidCardElementCol = styled.div`
@@ -205,6 +209,20 @@ const bids = [
     address: '0x1234',
     intensity: 2,
     created_at: '2021-10-10 10:10:10'
+  },
+  {
+    id: '2',
+    amount: 500,
+    address: '0x1234',
+    intensity: 2,
+    created_at: '2021-10-10 10:10:10'
+  },
+  {
+    id: '3',
+    amount: 50,
+    address: '0x1234',
+    intensity: 5,
+    created_at: '2021-10-10 10:10:10'
   }
 ]
 
@@ -234,16 +252,29 @@ const calculateTimeLeft = (endTime: string): {
   }
 }
 
+const Loader = () => {
+  return (
+    <p>loading</p>
+  )
+}
+
 export default function FinishBid() {
   const theme = useTheme()
   const { account, chainId } = useWeb3React()
+  const location = useLocation()
+  
   const [ bid, setBid ] = useState(0)
+  const [ intensity, setIntensity ] = useState(1)
+  const [ completed, setCompleted ] = useState(false)
+  const [ loading, setLoading ] = useState(false)
   const [timeLeft, setTimeLeft] = useState<{
     d: number;
     h: number;
     m: number;
     s: number;
   }>(calculateTimeLeft('2023-01-27 00:00:00'));
+
+  const ipfsLink = location.search.split("link=")[1]
 
   const handleValue = useCallback(
     (value: string) => {
@@ -260,6 +291,31 @@ export default function FinishBid() {
     return () => clearTimeout(timer);
   });
 
+  const AuctionHouse = useContract(
+    '0xa7620C421d29db2bb991cD603a725b960E927cEd',
+    [
+      {
+        inputs: [
+          {
+            "internalType": "uint256",
+            "name": "tokens",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "image",
+            "type": "string"
+          }
+        ],
+        "name": "insert",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ],
+    true
+  )
+
   const timeString = Object.keys(timeLeft).map((interval) => {
     // @ts-ignore
     if (!timeLeft[interval]) {
@@ -270,56 +326,92 @@ export default function FinishBid() {
     return timeLeft[interval] + interval + " "
   }).join("");
 
+  function handleSubmit() {
+    if(!bid) {
+      alert('Please enter a bid')
+      return
+    }
+
+    if(!ipfsLink) {
+      alert('Please enter a link on previous screen')
+      return
+    }
+
+    setLoading(true)
+    // TODO: sign and submit txn here
+
+    const transfromedBid = ethers.utils.parseEther(bid.toString())
+    console.log(transfromedBid)
+    AuctionHouse?.functions?.insert(transfromedBid, ipfsLink).then((res) => {
+      console.log(res)
+      res.wait().then((res: any) => {
+        console.log(res)
+        setCompleted(true)
+      })
+    })
+    setLoading(false)
+  }
+
   return (
     <Trace page={InterfacePageName.VOTE_PAGE} shouldLogImpression>
       <PageWrapper gap="lg" justify="center">
-        <AdsLandingLayout>
-          <LeftPanel>
-            <div>
-              <NoirUniLogo src={NoirUni} />
-              <p>Set Bid Price</p>
-              <BidInput 
-                  onUserInput={handleValue}
-                  // TODO: cast to correct precision
-                  align={'left'}
-                  value={String(bid)}
-                  fontSize={'16'}
-              />
-            </div>
-            <div>
-              <p>Auction ends in</p>
-              <CountdownElement>
-                <span style={{
-                  fontSize: '32px',
-                  width: '50%'
-                }}>{timeString && timeString}</span>
-                <p style={{
-                  width: '400px'
-                }}>The earlier you bid, the more intense your GLO. Bid now and your GLO will be intensified by 2x</p>
-              </CountdownElement>
-              <ProgressBar completed={60}/>
-            </div>
-            <div>
-              <AdsButtonPrimary
-                
-                as={Link}
-                to="/finish"
-                style={{ width: '100%', borderRadius: '8px', height: '60px', opacity: bid > 0 ? 1 : 0.5, pointerEvents: bid > 0 ? 'all' : 'none' }}
-                padding="8px"
-              >
-                <Trans>Place top bid of {bid} GLO Intensity</Trans>
-              </AdsButtonPrimary>
-            </div>
-          </LeftPanel>
+        { !loading ? <AdsLandingLayout>
+          { !completed ?
+            <LeftPanel>
+              <div>
+                <NoirUniLogo src={NoirUni} />
+                <p>Set Bid Price</p>
+                <BidInput 
+                    onUserInput={handleValue}
+                    // TODO: cast to correct precision
+                    align={'left'}
+                    value={String(bid)}
+                    fontSize={'16'}
+                />
+              </div>
+              <div>
+                <p>Auction ends in</p>
+                <CountdownElement>
+                  <span style={{
+                    fontSize: '32px',
+                    width: '50%'
+                  }}>{timeString && timeString}</span>
+                  <p style={{
+                    width: '400px'
+                  }}>The earlier you bid, the more intense your GLO. Bid now and your GLO will be intensified by 2x</p>
+                </CountdownElement>
+                <ProgressBar completed={60}/>
+              </div>
+              <div>
+                <AdsButtonPrimary
+                  style={{ width: '100%', borderRadius: '8px', height: '60px', opacity: bid > 0 ? 1 : 0.5, pointerEvents: bid > 0 ? 'all' : 'none' }}
+                  padding="8px"
+                  onClick={handleSubmit}
+                >
+                  <Trans>Place top bid of {bid} GLO Intensity</Trans>
+                </AdsButtonPrimary>
+              </div>
+            </LeftPanel>
+            :
+            <LeftPanel>
+              <p style={{
+                fontSize: '64px'
+              }}>You're all set</p>
+              {ipfsLink && <img src={ipfsLink} alt="" />}
+            </LeftPanel>
+          }
           <RightPanel>
             <MediumHeader>Current Top Bids</MediumHeader>
             {
-              bids.map((bid) => (
-                <BidCard bid={bid}/>
+              // sort bids first by amount * intensity
+              bids.sort((a, b) => (b.amount * b.intensity) - (a.amount * a.intensity)).map((bid) => (
+                  <BidCard key={bid.id} bid={bid}/>
               ))
             }
           </RightPanel>
         </AdsLandingLayout>
+        : <Loader />
+      }
       </PageWrapper>
     </Trace>
   )

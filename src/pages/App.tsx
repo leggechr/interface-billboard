@@ -40,6 +40,7 @@ import Swap from './Swap'
 import { RedirectPathToSwapOnly } from './Swap/redirects'
 import Tokens from './Tokens'
 import Ads from './Ads'
+import FinishBid from './Ads/FinishBid'
 
 const TokenDetails = lazy(() => import('./TokenDetails'))
 const Vote = lazy(() => import('./Vote'))
@@ -217,9 +218,9 @@ export default function App() {
                 />
                 <Route path="create-proposal" element={<Navigate to="/vote/create-proposal" replace />} />
                 
+                <Route path="ads/finish" element={<FinishBid />} />
                 <Route path="ads/*" element={<Ads />} />
                 <Route path="create-bid" element={<Navigate to="/ads/create-bid" replace />} />
-                <Route path="finish" element={<Navigate to="/ads/finish" replace />} />
 
                 <Route path="send" element={<RedirectPathToSwapOnly />} />
                 <Route path="swap" element={<Swap />} />

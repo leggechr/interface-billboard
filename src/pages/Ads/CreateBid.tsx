@@ -62,7 +62,7 @@ const CreateBidHeaderTextBlock = styled.p`
 
 export const IPFSContext = React.createContext<string | null>(null);
 
-function useIPFSContext() {
+export function useIPFSContext() {
   const context = useContext(IPFSContext)
   if (context === undefined) {
     throw new Error('useIPFSContext must be used within a IPFSProvider')
@@ -101,10 +101,10 @@ export default function CreateBid() {
               fontSize={'1.25rem'}
           />
           <AdsButtonPrimary
-            // TODO: how to get icons here?
-            // data-cy="join-pool-button"
             as={Link}
-            to="/finish"
+            to={{pathname: `/ads/finish`, search: `?link=${value}`}}
+            // state={{ link: value }}
+            replace={true}
             style={{ width: '100%', borderRadius: '8px' }}
             padding="8px"
           >
