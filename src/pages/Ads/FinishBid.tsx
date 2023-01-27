@@ -487,7 +487,12 @@ export default function FinishBid() {
                   padding="8px"
                   onClick={handleSubmit}
                 >
-                  <Trans>Place top bid of {bid} GLO Intensity</Trans>
+                  <Trans>Place bid of {bid} <img style={{
+                    width: '24px',
+                    height: '24px',
+                    marginRight: '0.5rem',
+                    marginLeft: '0.5rem'
+                  }} src={GloLogo}></img> for {(bid * progressCounter).toFixed(2)} GLO Power</Trans>
                 </AdsButtonPrimary>
               </div>
             </LeftPanel>
