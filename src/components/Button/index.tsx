@@ -279,6 +279,33 @@ const ButtonConfirmedStyle = styled(BaseButton)`
   }
 `
 
+export const AdsButtonPrimary = styled(BaseButton)`
+  background-color: #000000;
+  border-radius: 12px;
+  color: white;
+  justify-content: start;
+  font-size: 20px;
+
+  &:focus {
+    box-shadow: 0 0 0 1pt ${({ theme }) => theme.deprecated_primary4};
+    border: 1px solid ${({ theme }) => theme.deprecated_primary3};
+  }
+  &:hover {
+    border: 1px solid ${({ theme }) => theme.deprecated_primary3};
+  }
+  &:active {
+    box-shadow: 0 0 0 1pt ${({ theme }) => theme.deprecated_primary4};
+    border: 1px solid ${({ theme }) => theme.deprecated_primary3};
+  }
+  &:disabled {
+    opacity: 50%;
+    cursor: auto;
+  }
+  a:hover {
+    text-decoration: none;
+  }
+`
+
 const ButtonErrorStyle = styled(BaseButton)`
   background-color: ${({ theme }) => theme.accentFailure};
   border: 1px solid ${({ theme }) => theme.accentFailure};
