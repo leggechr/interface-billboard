@@ -373,7 +373,6 @@ export default function FinishBid() {
     (result: any) => result.winner !== '0x0000000000000000000000000000000000000000'
   )
 
-
   const currentLeaderboard: any[] = useSingleCallResult(AuctionHouse, 'getWinners', [1])?.result?.[0].filter(
     (result: any) => result.winner !== '0x0000000000000000000000000000000000000000'
   )
@@ -392,9 +391,16 @@ export default function FinishBid() {
         created_at: '2021-10-10 10:10:10'
       }
     })
-  }, [currentLeaderboard.length])
+  }, [currentLeaderboard?.length])
 
-  const [leaders, setLeaders] = useState(initialLeaders)
+  const [leaders, setLeaders] = useState<any[]>([])
+  
+  useEffect(() => {
+    if (initialLeaders) {
+      setLeaders(initialLeaders)
+    }
+  }, [initialLeaders])
+
 
   const timeString = Object.keys(timeLeft).map((interval) => {
     // @ts-ignore
