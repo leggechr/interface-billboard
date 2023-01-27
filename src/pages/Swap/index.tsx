@@ -42,6 +42,7 @@ import styled, { useTheme } from 'styled-components/macro'
 import invariant from 'tiny-invariant'
 import { currencyAmountToPreciseFloat, formatTransactionAmount } from 'utils/formatNumbers'
 
+import gloLogo from '../../assets/images/glo-token.png'
 import AddressInputPanel from '../../components/AddressInputPanel'
 import Ads from '../../components/Ads'
 import { ButtonConfirmed, ButtonError, ButtonLight, ButtonPrimary } from '../../components/Button'
@@ -77,59 +78,6 @@ import { computeFiatValuePriceImpact } from '../../utils/computeFiatValuePriceIm
 import { maxAmountSpend } from '../../utils/maxAmountSpend'
 import { computeRealizedPriceImpact, warningSeverity } from '../../utils/prices'
 import { supportedChainId } from '../../utils/supportedChainId'
-
-const ads = [
-  {
-    image: 'https://cloudflare-ipfs.com/ipfs/QmYN3R1YY5cSVW6mNHXz86n6HAvjJoNeVGXmwrQcYqgMUU',
-    winner: '0x8a9c67fee641579deba04928c4bc45f66e26343a',
-    value: 1000,
-  },
-  {
-    image: 'https://cloudflare-ipfs.com/ipfs/QmYN3R1YY5cSVW6mNHXz86n6HAvjJoNeVGXmwrQcYqgMUU',
-    winner: '0x8a9c67fee641579deba04928c4bc45f66e26343a',
-    value: 500,
-  },
-  {
-    image: 'https://cloudflare-ipfs.com/ipfs/QmYN3R1YY5cSVW6mNHXz86n6HAvjJoNeVGXmwrQcYqgMUU',
-    winner: '0x8a9c67fee641579deba04928c4bc45f66e26343a',
-    value: 100,
-  },
-  {
-    image: 'https://cloudflare-ipfs.com/ipfs/QmYN3R1YY5cSVW6mNHXz86n6HAvjJoNeVGXmwrQcYqgMUU',
-    winner: '0x8a9c67fee641579deba04928c4bc45f66e26343a',
-    value: 20,
-  },
-  {
-    image: 'https://cloudflare-ipfs.com/ipfs/QmYN3R1YY5cSVW6mNHXz86n6HAvjJoNeVGXmwrQcYqgMUU',
-    winner: '0x8a9c67fee641579deba04928c4bc45f66e26343a',
-    value: 900,
-  },
-  {
-    image: 'https://cloudflare-ipfs.com/ipfs/QmYN3R1YY5cSVW6mNHXz86n6HAvjJoNeVGXmwrQcYqgMUU',
-    winner: '0x8a9c67fee641579deba04928c4bc45f66e26343a',
-    value: 60,
-  },
-  {
-    image: 'https://cloudflare-ipfs.com/ipfs/QmYN3R1YY5cSVW6mNHXz86n6HAvjJoNeVGXmwrQcYqgMUU',
-    winner: '0x8a9c67fee641579deba04928c4bc45f66e26343a',
-    value: 800,
-  },
-  {
-    image: 'https://cloudflare-ipfs.com/ipfs/QmYN3R1YY5cSVW6mNHXz86n6HAvjJoNeVGXmwrQcYqgMUU',
-    winner: '0x8a9c67fee641579deba04928c4bc45f66e26343a',
-    value: 180,
-  },
-  {
-    image: 'https://cloudflare-ipfs.com/ipfs/QmYN3R1YY5cSVW6mNHXz86n6HAvjJoNeVGXmwrQcYqgMUU',
-    winner: '0x8a9c67fee641579deba04928c4bc45f66e26343a',
-    value: 500,
-  },
-  {
-    image: 'https://cloudflare-ipfs.com/ipfs/QmYN3R1YY5cSVW6mNHXz86n6HAvjJoNeVGXmwrQcYqgMUU',
-    winner: '0x8a9c67fee641579deba04928c4bc45f66e26343a',
-    value: 500,
-  },
-]
 
 const ArrowContainer = styled.div`
   display: inline-block;
@@ -208,6 +156,36 @@ function largerPercentValue(a?: Percent, b?: Percent) {
 }
 
 const TRADE_STRING = 'SwapRouter'
+
+function ClaimToast({ claim }: { claim: () => void }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        backgroundColor: '#1B2236',
+        fontSize: '14px',
+        borderRadius: '16px',
+        boxSizing: 'border-box',
+        position: 'fixed',
+        bottom: '12px',
+        right: '12px',
+        transition: 'transform 1s ease-in-out',
+        animation: 'toast-in-right 1s',
+        zIndex: 9999,
+        padding: '12px 20px',
+        alignItems: 'center',
+      }}
+    >
+      <img height="24px" width="24px" src={gloLogo} />
+      <div style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        <span style={{ color: 'white', fontSize: '16px' }}>You earned another 69 GLO</span>
+        <Button onClick={claim} style={{ fontSize: '16px', padding: 0, color: '#FC72FF', display: 'contents' }}>
+          Claim reward
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 export default function Swap({ className }: { className?: string }) {
   const navigate = useNavigate()
@@ -344,7 +322,16 @@ export default function Swap({ className }: { className?: string }) {
     txHash: undefined,
   })
 
+  const [showClaimToast, setShowClaimToast] = useState(false)
   const isSwapConfirmed = useIsTransactionConfirmed(txHash)
+  useEffect(() => {
+    if (isSwapConfirmed) {
+      setShowClaimToast(true)
+      setTimeout(() => {
+        setShowClaimToast(false)
+      }, 5000)
+    }
+  }, [isSwapConfirmed])
 
   const formattedAmounts = useMemo(
     () => ({
@@ -675,18 +662,23 @@ export default function Swap({ className }: { className?: string }) {
       ],
     },
   ])
+
   const oldWinners = useSingleCallResult(auction, 'getWinners', [0])?.result?.[0]?.filter(
     (result: any) => result.winner !== '0x0000000000000000000000000000000000000000'
   )
-  const newWinners = useSingleCallResult(auction, 'getWinners', [1])?.result?.[0].filter(
-    (result: any) => result.winner !== '0x0000000000000000000000000000000000000000'
-  )
-  console.log(oldWinners)
-  console.log(newWinners)
+
+  const claim = () => {
+    if (account) {
+      UR?.functions?.claim(account).then((res) => {
+        addTransaction(res, { type: TransactionType.CLAIM, recipient: account })
+      })
+    }
+  }
 
   return (
     <Trace page={InterfacePageName.SWAP_PAGE} shouldLogImpression>
       <>
+        {showClaimToast && <ClaimToast claim={claim} />}
         <TokenSafetyModal
           isOpen={importTokensNotInDefault.length > 0 && !dismissTokenWarning}
           tokenAddress={importTokensNotInDefault[0]?.address}
@@ -706,16 +698,7 @@ export default function Swap({ className }: { className?: string }) {
           >
             balance: <span id="glo-balance">{gloBalance?.toExact()}</span>
             unclaimed: <span id="glo-unclaimed">{unclaimed?.toExact()}</span>
-            <Button
-              id="claim-button"
-              onClick={() => {
-                if (account) {
-                  UR?.functions?.claim(account).then((res) => {
-                    addTransaction(res, { type: TransactionType.CLAIM, recipient: account })
-                  })
-                }
-              }}
-            >
+            <Button id="claim-button" onClick={claim}>
               claim!
             </Button>
           </div>
@@ -1032,7 +1015,7 @@ export default function Swap({ className }: { className?: string }) {
               </div>
             </AutoColumn>
           </SwapWrapper>
-          <Ads ads={ads} />
+          <Ads ads={oldWinners} />
           <NetworkAlert />
         </PageWrapper>
         <SwitchLocaleLink />
