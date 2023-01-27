@@ -10,6 +10,7 @@ import {
 } from '@uniswap/analytics-events'
 import { Trade } from '@uniswap/router-sdk'
 import { Currency, CurrencyAmount, Percent, Token, TradeType } from '@uniswap/sdk-core'
+import { ChainId } from '@uniswap/smart-order-router'
 import { UNIVERSAL_ROUTER_ADDRESS } from '@uniswap/universal-router-sdk'
 import { useWeb3React } from '@web3-react/core'
 import { sendEvent } from 'components/analytics'
@@ -21,24 +22,29 @@ import TokenSafetyModal from 'components/TokenSafety/TokenSafetyModal'
 import { MouseoverTooltip } from 'components/Tooltip'
 import { isSupportedChain } from 'constants/chains'
 import { usePermit2Enabled } from 'featureFlags/flags/permit2'
+import { useContract } from 'hooks/useContract'
 import usePermit2Allowance, { AllowanceState } from 'hooks/usePermit2Allowance'
 import { useSwapCallback } from 'hooks/useSwapCallback'
 import useTransactionDeadline from 'hooks/useTransactionDeadline'
 import JSBI from 'jsbi'
+import { useSingleCallResult } from 'lib/hooks/multicall'
+import useCurrencyBalance from 'lib/hooks/useCurrencyBalance'
 import { formatSwapQuoteReceivedEventProperties } from 'lib/utils/analytics'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ReactNode } from 'react'
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { ArrowDown, CheckCircle, HelpCircle, Info } from 'react-feather'
 import { useNavigate } from 'react-router-dom'
-import { Text } from 'rebass'
+import { Button, Text } from 'rebass'
 import { useToggleWalletModal } from 'state/application/hooks'
-import { InterfaceTrade } from 'state/routing/types'
-import { TradeState } from 'state/routing/types'
+import { InterfaceTrade, TradeState } from 'state/routing/types'
+import { useIsTransactionConfirmed, useTransactionAdder } from 'state/transactions/hooks'
+import { TransactionType } from 'state/transactions/types'
 import styled, { useTheme } from 'styled-components/macro'
 import invariant from 'tiny-invariant'
 import { currencyAmountToPreciseFloat, formatTransactionAmount } from 'utils/formatNumbers'
 
+import gloLogo from '../../assets/images/glo-token.png'
 import AddressInputPanel from '../../components/AddressInputPanel'
+import Ads from '../../components/Ads'
 import { ButtonConfirmed, ButtonError, ButtonLight, ButtonPrimary } from '../../components/Button'
 import { GrayCard } from '../../components/Card'
 import { AutoColumn } from '../../components/Column'
@@ -149,7 +155,37 @@ function largerPercentValue(a?: Percent, b?: Percent) {
   return undefined
 }
 
+const Toast = styled.div<{ show: boolean }>`
+  display: flex;
+  background-color: #1b2236;
+  font-size: 14px;
+  border-radius: 16px;
+  box-sizing: border-box;
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  transition: opacity 0.4s ease-in-out;
+  zindex: 9999;
+  padding: 12px 20px;
+  align-items: center;
+  opacity: ${({ show }) => (show ? 1 : 0)};
+`
+
 const TRADE_STRING = 'SwapRouter'
+
+function ClaimToast({ claim, show }: { claim: () => void; show: boolean }) {
+  return (
+    <Toast show={show}>
+      <img height="24px" width="24px" src={gloLogo} />
+      <div style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        <span style={{ color: 'white', fontSize: '16px' }}>You earned another 69 GLO</span>
+        <Button onClick={claim} style={{ fontSize: '16px', padding: 0, color: '#FC72FF', display: 'contents' }}>
+          Claim reward
+        </Button>
+      </div>
+    </Toast>
+  )
+}
 
 export default function Swap({ className }: { className?: string }) {
   const navigate = useNavigate()
@@ -285,6 +321,17 @@ export default function Swap({ className }: { className?: string }) {
     swapErrorMessage: undefined,
     txHash: undefined,
   })
+
+  const [showClaimToast, setShowClaimToast] = useState(false)
+  const isSwapConfirmed = useIsTransactionConfirmed(txHash)
+  useEffect(() => {
+    if (isSwapConfirmed) {
+      setShowClaimToast(true)
+      setTimeout(() => {
+        setShowClaimToast(false)
+      }, 5000)
+    }
+  }, [isSwapConfirmed])
 
   const formattedAmounts = useMemo(
     () => ({
@@ -547,9 +594,92 @@ export default function Swap({ className }: { className?: string }) {
     !showWrap && userHasSpecifiedInputOutput && (trade || routeIsLoading || routeIsSyncing)
   )
 
+  const GLO_TOKEN = new Token(ChainId.GÖRLI, '0x5ABf80335aD99F1520d94e03a2a88545e0c007d1', 18)
+  const gloBalance = useCurrencyBalance(account ?? undefined, GLO_TOKEN)
+  const UR = useContract(
+    '0x0aC3B040018e350fd99BBE8a702B18d7d274338C',
+    [
+      {
+        constant: true,
+        inputs: [{ name: '_owner', type: 'address' }],
+        name: 'gloBalanceOf',
+        outputs: [{ name: 'balance', type: 'uint256' }],
+        payable: false,
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        constant: false,
+        inputs: [{ name: '_to', type: 'address' }],
+        name: 'claim',
+        outputs: [],
+        payable: false,
+        stateMutability: 'nonpayable',
+        type: 'function',
+      },
+    ],
+    true
+  )
+  const rawUnclaimed = useSingleCallResult(UR, 'gloBalanceOf', [account ?? undefined])?.result?.[0]
+  const unclaimed = rawUnclaimed ? CurrencyAmount.fromRawAmount(GLO_TOKEN, rawUnclaimed) : undefined
+  const addTransaction = useTransactionAdder()
+
+  const auction = useContract('0xa7620C421d29db2bb991cD603a725b960E927cEd', [
+    {
+      inputs: [
+        {
+          internalType: 'uint256',
+          name: 'week',
+          type: 'uint256',
+        },
+      ],
+      stateMutability: 'view',
+      type: 'function',
+      name: 'getWinners',
+      outputs: [
+        {
+          internalType: 'struct Auction.AuctionWinners[10]',
+          name: 'winners_',
+          type: 'tuple[10]',
+          components: [
+            {
+              internalType: 'address',
+              name: 'winner',
+              type: 'address',
+            },
+            {
+              internalType: 'uint256',
+              name: 'value',
+              type: 'uint256',
+            },
+            {
+              internalType: 'string',
+              name: 'image',
+              type: 'string',
+            },
+          ],
+        },
+      ],
+    },
+  ])
+
+  const oldWinners = useSingleCallResult(auction, 'getWinners', [0], { blocksPerFetch: 10000000 })?.result?.[0]?.filter(
+    (result: any) => result.winner !== '0x0000000000000000000000000000000000000000'
+  )
+  const ads = useMemo(() => oldWinners, [oldWinners?.length])
+
+  const claim = () => {
+    if (account) {
+      UR?.functions?.claim(account).then((res) => {
+        addTransaction(res, { type: TransactionType.CLAIM, recipient: account })
+      })
+    }
+  }
+
   return (
     <Trace page={InterfacePageName.SWAP_PAGE} shouldLogImpression>
       <>
+        <ClaimToast claim={claim} show={showClaimToast} />
         <TokenSafetyModal
           isOpen={importTokensNotInDefault.length > 0 && !dismissTokenWarning}
           tokenAddress={importTokensNotInDefault[0]?.address}
@@ -558,7 +688,21 @@ export default function Swap({ className }: { className?: string }) {
           onCancel={handleDismissTokenWarning}
           showCancel={true}
         />
-        <PageWrapper>
+        <PageWrapper withAds>
+          <div
+            style={{
+              position: 'absolute',
+              top: '60px',
+              right: 0,
+              opacity: 0,
+            }}
+          >
+            balance: <span id="glo-balance">{gloBalance?.toExact()}</span>
+            unclaimed: <span id="glo-unclaimed">{unclaimed?.toExact()}</span>
+            <Button id="claim-button" onClick={claim}>
+              claim!
+            </Button>
+          </div>
           <SwapWrapper className={className} id="swap-page">
             <SwapHeader allowedSlippage={allowedSlippage} />
             <ConfirmSwapModal
@@ -872,6 +1016,7 @@ export default function Swap({ className }: { className?: string }) {
               </div>
             </AutoColumn>
           </SwapWrapper>
+          <Ads ads={ads} />
           <NetworkAlert />
         </PageWrapper>
         <SwitchLocaleLink />

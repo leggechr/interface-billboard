@@ -5,7 +5,8 @@ import { sendAnalyticsEvent } from '@uniswap/analytics'
 import { SwapEventName } from '@uniswap/analytics-events'
 import { Trade } from '@uniswap/router-sdk'
 import { Currency, Percent, TradeType } from '@uniswap/sdk-core'
-import { SwapRouter, UNIVERSAL_ROUTER_ADDRESS } from '@uniswap/universal-router-sdk'
+import { ChainId } from '@uniswap/smart-order-router'
+import { SwapRouter } from '@uniswap/universal-router-sdk'
 import { FeeOptions, toHex } from '@uniswap/v3-sdk'
 import { useWeb3React } from '@web3-react/core'
 import { formatSwapSignedAnalyticsEventProperties } from 'lib/utils/analytics'
@@ -24,6 +25,8 @@ interface SwapOptions {
   permit?: PermitSignature
   feeOptions?: FeeOptions
 }
+
+const UNIVERSAL_ROUTER_ADDRESS = (_: ChainId) => '0x0aC3B040018e350fd99BBE8a702B18d7d274338C'
 
 export function useUniversalRouterSwapCallback(
   trade: Trade<Currency, Currency, TradeType> | undefined,
