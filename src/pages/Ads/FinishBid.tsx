@@ -358,6 +358,7 @@ export default function FinishBid() {
   useEffect(() => {
     console.log(currentLeaderboard)
     let idx = 0
+    if(!currentLeaderboard) return
     setLeaders(currentLeaderboard.map((ret) => {
       return {
         id: String(idx++),
