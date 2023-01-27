@@ -92,16 +92,17 @@ const BidCardElement = styled.div`
   width: 450px;
   height: 82px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   background-color: #FFFFFF;
   border-radius: 12px;
-  padding: 1rem;
   margin-bottom: 1rem;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
 `
 
 const BidCardElementCol = styled.div`
   display: flex;
   flex-direction: column;
+  padding: 1rem;
 `
 
 const CountdownElement = styled.div`
@@ -142,17 +143,30 @@ function BidCard({
 }) {
   return (
     <BidCardElement>
+      <img 
+        style={{
+          width: '100%',
+          height: '100%',
+          borderTopRightRadius: '0px',
+          borderBottomRightRadius: '0px',
+        }}
+        src={bid.image} />
       <BidCardElementCol>
         <span style={{
-          fontWeight: 'bold'
-        }}>{bid.amount}</span>
-        <span>{bid.amount} * {bid.intensity}</span>
+          fontWeight: 'bold',
+          marginBottom: '0.5rem'
+        }}>{bid.amount} GLO</span>
+        <span style={{
+          fontSize: '12px'
+        }}>Final bid</span>
+        {/* <span>{bid.amount} * {bid.intensity}</span> */}
       </BidCardElementCol>
       <BidCardElementCol style={{
         textAlign: 'right'
       }}>
         <span>by {bid.address}</span>
-        <span>{bid.created_at}</span>
+        <span>7h ago</span>
+        {/* <span>{bid.created_at}</span> */}
       </BidCardElementCol>
     </BidCardElement>
   )
@@ -385,6 +399,19 @@ export default function FinishBid() {
     console.log(transfromedBid)
     AuctionHouse?.functions?.insert(transfromedBid, ipfsLink).then((res) => {
       console.log(res)
+      // add to leaders (hacky)
+      setLeaders([
+        ...leaders,
+        {
+          id: String(leaders.length),
+          image: ipfsLink,
+          amount: bid.toString(),
+          // show first 4 and last 4
+          address: account?.slice(0, 4) + '...' + account?.slice(-4),
+          intensity: 1,
+          created_at: '2021-10-10 10:10:10'
+        }
+      ])
       res.wait().then((res: any) => {
         console.log(res)
         setCompleted(true)
