@@ -194,14 +194,15 @@ const ProgressBar = ({
             backgroundColor: '#FD82FF',
             borderRadius: '50',
             marginTop: '1rem',
-            marginBottom: '1rem'
+            marginBottom: '1rem',
           }}>
         <div style={{
             width: `${completed}%`,
             height: '100%',
-            backgroundColor: '#E0E0E0',
+            backgroundColor: '#787878',
             borderRadius: 'inherit',
-            textAlign: 'right'
+            textAlign: 'right',
+            borderRight: '5px solid #000000',
           }}></div>
       </div>
       <ProgressUnderlay>
@@ -216,36 +217,6 @@ const ProgressBar = ({
       </ProgressUnderlay>
     </div>    
   )
-}
-
-const calculateTimeLeft = (): {
-  d: number,
-  h: number,
-  m: number,
-  s: number
-} => {
-  // date from unix timestamp
-  let startTime = new Date(1674772656 * 1000)
-  startTime.setDate(startTime.getDate() + 7)
-  // add 1 week to start time
-  let difference = +startTime - +new Date();
-
-  if (difference > 0) {
-    return {
-      d: Math.floor(difference / (1000 * 60 * 60 * 24)),
-      h: Math.floor((difference / (1000 * 60 * 60)) % 24),
-      m: Math.floor((difference / 1000 / 60) % 60),
-      s: Math.floor((difference / 1000) % 60)
-    };
-  }
-  else {
-    return {
-      d: 0,
-      h: 0,
-      m: 0,
-      s: 0
-    }
-  }
 }
 
 const Loader = () => {
@@ -264,6 +235,41 @@ export default function FinishBid() {
   const [ intensity, setIntensity ] = useState(1)
   const [ completed, setCompleted ] = useState(false)
   const [ loading, setLoading ] = useState(false)
+
+  let progressCounter = 100
+  const calculateTimeLeft = (): {
+    d: number,
+    h: number,
+    m: number,
+    s: number
+  } => {
+    // date from unix timestamp
+    let startTime = new Date(1674772656 * 1000)
+    const originalStartTime = new Date(1674772656 * 1000)
+    startTime.setDate(startTime.getDate() + 7)
+    // add 1 week to start time
+    let difference = +startTime - +new Date();
+    
+    progressCounter = difference / (startTime.getTime() - originalStartTime.getTime())
+  
+    if (difference > 0) {
+      return {
+        d: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        h: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        m: Math.floor((difference / 1000 / 60) % 60),
+        s: Math.floor((difference / 1000) % 60)
+      };
+    }
+    else {
+      return {
+        d: 0,
+        h: 0,
+        m: 0,
+        s: 0
+      }
+    }
+  }
+
   const [timeLeft, setTimeLeft] = useState<{
     d: number;
     h: number;
@@ -451,9 +457,9 @@ export default function FinishBid() {
                   }}>{timeString && timeString}</span>
                   <p style={{
                     width: '400px'
-                  }}>The earlier you bid, the more intense your GLO. Bid now and your GLO will only be worth 25%</p>
+                  }}>The earlier you bid, the more intense your GLO. Bid now and your GLO will only be worth {(progressCounter * 100).toFixed(0)}%</p>
                 </CountdownElement>
-                <ProgressBar completed={60}/>
+                <ProgressBar completed={100 - (progressCounter * 100)}/>
               </div>
               <div>
                 <AdsButtonPrimary
