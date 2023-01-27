@@ -155,27 +155,27 @@ function largerPercentValue(a?: Percent, b?: Percent) {
   return undefined
 }
 
+const Toast = styled.div<{ show: boolean }>`
+  display: flex;
+  background-color: #1b2236;
+  font-size: 14px;
+  border-radius: 16px;
+  box-sizing: border-box;
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  transition: opacity 0.4s ease-in-out;
+  zindex: 9999;
+  padding: 12px 20px;
+  align-items: center;
+  opacity: ${({ show }) => (show ? 1 : 0)};
+`
+
 const TRADE_STRING = 'SwapRouter'
 
-function ClaimToast({ claim }: { claim: () => void }) {
+function ClaimToast({ claim, show }: { claim: () => void; show: boolean }) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        backgroundColor: '#1B2236',
-        fontSize: '14px',
-        borderRadius: '16px',
-        boxSizing: 'border-box',
-        position: 'fixed',
-        bottom: '12px',
-        right: '12px',
-        transition: 'transform 1s ease-in-out',
-        animation: 'toast-in-right 1s',
-        zIndex: 9999,
-        padding: '12px 20px',
-        alignItems: 'center',
-      }}
-    >
+    <Toast show={show}>
       <img height="24px" width="24px" src={gloLogo} />
       <div style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
         <span style={{ color: 'white', fontSize: '16px' }}>You earned another 69 GLO</span>
@@ -183,7 +183,7 @@ function ClaimToast({ claim }: { claim: () => void }) {
           Claim reward
         </Button>
       </div>
-    </div>
+    </Toast>
   )
 }
 
@@ -663,9 +663,10 @@ export default function Swap({ className }: { className?: string }) {
     },
   ])
 
-  const oldWinners = useSingleCallResult(auction, 'getWinners', [0])?.result?.[0]?.filter(
+  const oldWinners = useSingleCallResult(auction, 'getWinners', [0], { blocksPerFetch: 10000000 })?.result?.[0]?.filter(
     (result: any) => result.winner !== '0x0000000000000000000000000000000000000000'
   )
+  const ads = useMemo(() => oldWinners, [oldWinners?.length])
 
   const claim = () => {
     if (account) {
@@ -678,7 +679,7 @@ export default function Swap({ className }: { className?: string }) {
   return (
     <Trace page={InterfacePageName.SWAP_PAGE} shouldLogImpression>
       <>
-        {showClaimToast && <ClaimToast claim={claim} />}
+        <ClaimToast claim={claim} show={showClaimToast} />
         <TokenSafetyModal
           isOpen={importTokensNotInDefault.length > 0 && !dismissTokenWarning}
           tokenAddress={importTokensNotInDefault[0]?.address}
@@ -1015,7 +1016,7 @@ export default function Swap({ className }: { className?: string }) {
               </div>
             </AutoColumn>
           </SwapWrapper>
-          <Ads ads={oldWinners} />
+          <Ads ads={ads} />
           <NetworkAlert />
         </PageWrapper>
         <SwitchLocaleLink />

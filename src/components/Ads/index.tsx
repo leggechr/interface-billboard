@@ -1,6 +1,6 @@
 import { BigNumber } from '@ethersproject/bignumber'
 import useInterval from 'lib/hooks/useInterval'
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import styled from 'styled-components/macro'
 
 interface Ad {
@@ -25,19 +25,48 @@ export default function Ads({ ads }: { ads: Ad[] | undefined }) {
     return ads[index]
   }, [ads])
 
-  const [currAd, setAd] = useState<Ad | undefined>(getAd())
+  const queuedAds = useRef([getAd(), getAd()])
+  const [displayedIndex, setDisplayedIndex] = useState<0 | 1>(0)
 
   useInterval(
     () => {
-      const ad = getAd()
-      if (!ad || ad === currAd) return
-      setAd(ad)
+      if (!ads) return
+
+      const nextIndex = displayedIndex ? 0 : 1
+      queuedAds.current[nextIndex] = getAd()
+
+      if (queuedAds.current[displayedIndex]?.image === queuedAds.current[nextIndex]?.image) {
+        return
+      }
+
+      setDisplayedIndex(nextIndex)
     },
-    3000,
+    5000,
     false
   )
 
-  if (!currAd) return null
+  if (!ads) return null
 
-  return <Img src={currAd.image} />
+  return (
+    <div style={{ position: 'relative' }}>
+      <Img
+        style={{
+          position: 'absolute',
+          left: 0,
+          opacity: !displayedIndex ? 1 : 0,
+          transition: 'opacity 1s ease-in-out',
+        }}
+        src={queuedAds.current[0]?.image}
+      />
+      <Img
+        style={{
+          position: 'absolute',
+          left: 0,
+          opacity: displayedIndex ? 1 : 0,
+          transition: 'opacity 1s ease-in-out',
+        }}
+        src={queuedAds.current[1]?.image}
+      />
+    </div>
+  )
 }
