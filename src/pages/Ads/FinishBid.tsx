@@ -205,26 +205,30 @@ const ProgressBar = ({
           }}></div>
       </div>
       <ProgressUnderlay>
-          <span>100x</span>
-          <ProgressCentered>75x</ProgressCentered>
-          <ProgressCentered>50x</ProgressCentered>
-          <ProgressCentered>25x</ProgressCentered>
-          <ProgressCentered>5x</ProgressCentered>
+          <span>1x</span>
+          <ProgressCentered>0.75x</ProgressCentered>
+          <ProgressCentered>0.5x</ProgressCentered>
+          <ProgressCentered>0.25x</ProgressCentered>
+          <ProgressCentered>0.1</ProgressCentered>
           <span style={{
             textAlign: 'right'
-          }}>1x</span>
+          }}>0</span>
       </ProgressUnderlay>
     </div>    
   )
 }
 
-const calculateTimeLeft = (endTime: string): {
+const calculateTimeLeft = (): {
   d: number,
   h: number,
   m: number,
   s: number
 } => {
-  let difference = +new Date(endTime) - +new Date();
+  // date from unix timestamp
+  let startTime = new Date(1674772656 * 1000)
+  startTime.setDate(startTime.getDate() + 7)
+  // add 1 week to start time
+  let difference = +startTime - +new Date();
 
   if (difference > 0) {
     return {
@@ -265,7 +269,7 @@ export default function FinishBid() {
     h: number;
     m: number;
     s: number;
-  }>(calculateTimeLeft('2023-01-27 00:00:00'));
+  }>(calculateTimeLeft());
 
   const ipfsLink = location.search.split("link=")[1]
 
@@ -278,7 +282,7 @@ export default function FinishBid() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setTimeLeft(calculateTimeLeft('2023-01-27 00:00:00'));
+      setTimeLeft(calculateTimeLeft());
     }, 1000);
   
     return () => clearTimeout(timer);
@@ -447,7 +451,7 @@ export default function FinishBid() {
                   }}>{timeString && timeString}</span>
                   <p style={{
                     width: '400px'
-                  }}>The earlier you bid, the more intense your GLO. Bid now and your GLO will be intensified by 2x</p>
+                  }}>The earlier you bid, the more intense your GLO. Bid now and your GLO will only be worth 25%</p>
                 </CountdownElement>
                 <ProgressBar completed={60}/>
               </div>
